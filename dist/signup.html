@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account – Quick Serve</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>Quick Serve</h1>
+      <p>Create a new account</p>
+    </div>
+
+    <div id="alert-area"></div>
+
+    <form id="signup-form" novalidate>
+      <div class="form-group">
+        <label for="username">Username <span class="required">*</span></label>
+        <input class="form-control" type="text" id="username" autocomplete="username" placeholder="Choose a username">
+        <div class="field-error hidden" id="err-username"></div>
+      </div>
+      <div class="form-group">
+        <label for="email">Email address <span class="required">*</span></label>
+        <input class="form-control" type="email" id="email" autocomplete="email" placeholder="you@example.com">
+        <div class="field-error hidden" id="err-email"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="password">Password <span class="required">*</span></label>
+          <input class="form-control" type="password" id="password" autocomplete="new-password" placeholder="Min. 6 characters">
+          <div class="field-error hidden" id="err-password"></div>
+        </div>
+        <div class="form-group">
+          <label for="password2">Confirm Password <span class="required">*</span></label>
+          <input class="form-control" type="password" id="password2" autocomplete="new-password" placeholder="Repeat password">
+          <div class="field-error hidden" id="err-password2"></div>
+        </div>
+      </div>
+      <div class="form-group form-check">
+        <input type="checkbox" id="is_staff">
+        <label for="is_staff">Register as staff member</label>
+      </div>
+      <button type="submit" class="btn btn-primary w-full mt-2">Create Account</button>
+    </form>
+
+    <p class="auth-divider">Already have an account?</p>
+    <a href="login.html" class="btn btn-secondary w-full" style="justify-content:center;">Sign In</a>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.current()) window.location.href = 'index.html';
+
+  document.getElementById('signup-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const password2 = document.getElementById('password2').value;
+    const is_staff = document.getElementById('is_staff').checked;
+    let valid = true;
+
+    // Reset errors
+    ['username','email','password','password2'].forEach(f => {
+      document.getElementById('err-' + f).classList.add('hidden');
+      document.getElementById(f).classList.remove('error');
+    });
+
+    if (!username) {
+      showErr('username', 'Username is required.');
+      valid = false;
+    } else {
+      const existing = Data.getUsers().find(u => u.username === username);
+      if (existing) { showErr('username', 'That username is already taken.'); valid = false; }
+    }
+    if (!email || !email.includes('@')) { showErr('email', 'A valid email is required.'); valid = false; }
+    if (password.length < 6) { showErr('password', 'Password must be at least 6 characters.'); valid = false; }
+    if (password !== password2) { showErr('password2', 'Passwords do not match.'); valid = false; }
+    if (!valid) return;
+
+    const user = Data.addUser({ username, email, password, is_staff, phone: '', address: '' });
+    QS.set('session', { id: user.id, username: user.username, is_staff: user.is_staff });
+    window.location.href = 'index.html';
+  });
+
+  function showErr(field, msg) {
+    const el = document.getElementById('err-' + field);
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    document.getElementById(field).classList.add('error');
+  }
+});
+</script>
+</body>
+</html>

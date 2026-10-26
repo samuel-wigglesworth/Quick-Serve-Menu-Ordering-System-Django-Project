@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Place Order – Quick Serve</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="topbar">
+    <a href="index.html" class="topbar-brand">Quick Serve</a>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <a href="#" id="topbar-logout">Sign out</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Place Order</h1>
+          <p>Add items to your order, then confirm to submit.</p>
+        </div>
+        <a href="menu.html" class="btn btn-secondary">Back to Menu</a>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 340px; gap:1.5rem; align-items:start;" id="order-layout">
+
+        <!-- Menu selection panel -->
+        <div class="card">
+          <div class="card-title">Select Items</div>
+          <input class="form-control mb-2" type="search" id="item-search" placeholder="Filter menu items...">
+          <div id="item-list" style="display:flex; flex-direction:column; gap:.5rem; max-height:480px; overflow-y:auto;"></div>
+        </div>
+
+        <!-- Cart / summary -->
+        <div class="card" style="position:sticky; top:76px;">
+          <div class="card-title">Your Order</div>
+          <div id="cart-items"><p class="text-muted text-sm">No items added yet.</p></div>
+          <div id="cart-total-row" class="hidden">
+            <div class="cart-total">
+              <span>Total</span>
+              <span id="cart-total-val"></span>
+            </div>
+          </div>
+          <button class="btn btn-primary w-full mt-2" id="submit-order" disabled>Submit Order</button>
+          <div id="order-alert"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer>Quick Serve Menu Ordering System &copy; 2024</footer>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/nav.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = Auth.require();
+  if (!user) return;
+  UI.renderTopbar(user);
+  renderSidebar('order-create', user);
+
+  // Responsive layout
+  if (window.innerWidth < 700) {
+    document.getElementById('order-layout').style.gridTemplateColumns = '1fr';
+  }
+
+  const cart = {}; // {item_id: quantity}
+
+  // Pre-select item if navigated from menu with ?item=
+  const preselect = new URLSearchParams(location.search).get('item');
+
+  const items = Data.getAvailableItems();
+
+  function renderItemList(query = '') {
+    const filtered = query ? items.filter(i => i.name.toLowerCase().includes(query.toLowerCase())) : items;
+    const list = document.getElementById('item-list');
+    if (filtered.length === 0) { list.innerHTML = '<p class="text-muted text-sm">No items found.</p>'; return; }
+    list.innerHTML = filtered.map(item => `
+      <div class="flex items-center justify-between gap-2" style="padding:.65rem .8rem; border:1px solid var(--clr-border); border-radius:var(--radius); background:#fff;">
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:.9rem;">${escHtml(item.name)}</div>
+          <div class="text-muted text-sm">${UI.formatCurrency(item.price)}</div>
+        </div>
+        <div class="flex items-center gap-1">
+          <button class="btn btn-secondary btn-xs qty-btn" data-id="${item.id}" data-op="dec">-</button>
+          <span class="qty-display" data-id="${item.id}" style="min-width:24px; text-align:center; font-weight:700;">${cart[item.id] || 0}</span>
+          <button class="btn btn-primary btn-xs qty-btn" data-id="${item.id}" data-op="inc">+</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderCart() {
+    const cartEl = document.getElementById('cart-items');
+    const totalRow = document.getElementById('cart-total-row');
+    const keys = Object.keys(cart).filter(id => cart[id] > 0);
+    if (keys.length === 0) {
+      cartEl.innerHTML = '<p class="text-muted text-sm">No items added yet.</p>';
+      totalRow.classList.add('hidden');
+      document.getElementById('submit-order').disabled = true;
+      return;
+    }
+    let total = 0;
+    cartEl.innerHTML = keys.map(id => {
+      const item = Data.getMenuItem(id);
+      const sub  = item.price * cart[id];
+      total += sub;
+      return `<div class="cart-item">
+        <div>
+          <div class="cart-item-name">${escHtml(item.name)}</div>
+          <div class="cart-item-meta">x${cart[id]} @ ${UI.formatCurrency(item.price)}</div>
+        </div>
+        <div style="font-weight:700;">${UI.formatCurrency(sub)}</div>
+      </div>`;
+    }).join('');
+    totalRow.classList.remove('hidden');
+    document.getElementById('cart-total-val').textContent = UI.formatCurrency(total);
+    document.getElementById('submit-order').disabled = false;
+  }
+
+  // Event delegation for qty buttons
+  document.getElementById('item-list').addEventListener('click', e => {
+    const btn = e.target.closest('.qty-btn');
+    if (!btn) return;
+    const id  = Number(btn.dataset.id);
+    const op  = btn.dataset.op;
+    if (op === 'inc') cart[id] = (cart[id] || 0) + 1;
+    if (op === 'dec') cart[id] = Math.max(0, (cart[id] || 0) - 1);
+    // update display without full re-render
+    document.querySelectorAll(`.qty-display[data-id="${id}"]`).forEach(el => el.textContent = cart[id] || 0);
+    renderCart();
+  });
+
+  document.getElementById('item-search').addEventListener('input', e => renderItemList(e.target.value));
+
+  document.getElementById('submit-order').addEventListener('click', () => {
+    const lineItems = Object.keys(cart).filter(id => cart[id] > 0).map(id => ({ menu_item_id: Number(id), quantity: cart[id] }));
+    if (lineItems.length === 0) return;
+    const order = Data.createOrder(user.id, lineItems);
+    window.location.href = `order-detail.html?id=${order.id}&new=1`;
+  });
+
+  renderItemList();
+  renderCart();
+
+  // Auto-add pre-selected item
+  if (preselect) {
+    cart[Number(preselect)] = 1;
+    renderItemList();
+    renderCart();
+  }
+});
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(str || ''));
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

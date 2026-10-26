@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Menu – Quick Serve</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="topbar">
+    <a href="index.html" class="topbar-brand">Quick Serve</a>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <a href="#" id="topbar-logout">Sign out</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Manage Menu</h1>
+          <p>Add, edit or toggle availability of menu items.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-add-item">Add Item</button>
+      </div>
+
+      <div id="alert-area"></div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="menu-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer>Quick Serve Menu Ordering System &copy; 2024</footer>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal-overlay" id="item-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Add Menu Item</h3>
+      <button class="modal-close" data-close-modal="item-modal">&times;</button>
+    </div>
+    <form id="item-form" novalidate>
+      <input type="hidden" id="edit-id">
+      <div class="form-group">
+        <label for="item-name">Name <span class="required">*</span></label>
+        <input class="form-control" type="text" id="item-name" placeholder="Item name">
+        <div class="field-error hidden" id="err-item-name"></div>
+      </div>
+      <div class="form-group">
+        <label for="item-desc">Description</label>
+        <textarea class="form-control" id="item-desc" rows="2" placeholder="Brief description"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="item-price">Price <span class="required">*</span></label>
+        <input class="form-control" type="number" id="item-price" min="0" step="0.01" placeholder="0.00">
+        <div class="field-error hidden" id="err-item-price"></div>
+      </div>
+      <div class="form-group form-check">
+        <input type="checkbox" id="item-available" checked>
+        <label for="item-available">Available on menu</label>
+      </div>
+      <div class="flex gap-2" style="margin-top:1.25rem;">
+        <button type="submit" class="btn btn-primary">Save Item</button>
+        <button type="button" class="btn btn-secondary" data-close-modal="item-modal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/nav.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = Auth.require(true);
+  if (!user) return;
+  UI.renderTopbar(user);
+  renderSidebar('menu-manage', user);
+
+  function renderTable() {
+    const items = Data.getMenuItems();
+    const tbody = document.getElementById('menu-tbody');
+    if (items.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">No menu items.</td></tr>'; return; }
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td style="font-weight:600;">${escHtml(item.name)}</td>
+        <td class="text-muted text-sm">${escHtml(item.description) || '—'}</td>
+        <td>${UI.formatCurrency(item.price)}</td>
+        <td><span class="badge ${item.is_available ? 'badge-available' : 'badge-unavailable'}">${item.is_available ? 'Available' : 'Unavailable'}</span></td>
+        <td>
+          <button class="btn btn-xs btn-secondary" onclick="openEdit(${item.id})">Edit</button>
+          <button class="btn btn-xs btn-secondary" onclick="toggleAvailability(${item.id})">${item.is_available ? 'Disable' : 'Enable'}</button>
+          <button class="btn btn-xs btn-danger" onclick="deleteItem(${item.id})">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  window.openEdit = function(id) {
+    const item = Data.getMenuItem(id);
+    if (!item) return;
+    document.getElementById('modal-title').textContent = 'Edit Menu Item';
+    document.getElementById('edit-id').value       = item.id;
+    document.getElementById('item-name').value     = item.name;
+    document.getElementById('item-desc').value     = item.description;
+    document.getElementById('item-price').value    = item.price;
+    document.getElementById('item-available').checked = item.is_available;
+    UI.openModal('item-modal');
+  };
+
+  window.toggleAvailability = function(id) {
+    const item = Data.getMenuItem(id);
+    if (!item) return;
+    item.is_available = !item.is_available;
+    Data.saveMenuItem(item);
+    renderTable();
+    UI.showAlert(`"${item.name}" marked as ${item.is_available ? 'available' : 'unavailable'}.`);
+  };
+
+  window.deleteItem = function(id) {
+    const item = Data.getMenuItem(id);
+    if (!item) return;
+    if (!confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
+    Data.deleteMenuItem(id);
+    renderTable();
+    UI.showAlert(`"${item.name}" removed from menu.`, 'info');
+  };
+
+  document.getElementById('btn-add-item').addEventListener('click', () => {
+    document.getElementById('modal-title').textContent = 'Add Menu Item';
+    document.getElementById('item-form').reset();
+    document.getElementById('edit-id').value = '';
+    document.getElementById('item-available').checked = true;
+    UI.openModal('item-modal');
+  });
+
+  document.getElementById('item-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const name  = document.getElementById('item-name').value.trim();
+    const price = parseFloat(document.getElementById('item-price').value);
+    let valid = true;
+
+    document.getElementById('err-item-name').classList.add('hidden');
+    document.getElementById('err-item-price').classList.add('hidden');
+
+    if (!name) {
+      document.getElementById('err-item-name').textContent = 'Name is required.';
+      document.getElementById('err-item-name').classList.remove('hidden');
+      valid = false;
+    }
+    if (isNaN(price) || price < 0) {
+      document.getElementById('err-item-price').textContent = 'Enter a valid price.';
+      document.getElementById('err-item-price').classList.remove('hidden');
+      valid = false;
+    }
+    if (!valid) return;
+
+    const data = {
+      name,
+      description:  document.getElementById('item-desc').value.trim(),
+      price,
+      is_available: document.getElementById('item-available').checked,
+    };
+
+    const editId = document.getElementById('edit-id').value;
+    if (editId) {
+      Data.saveMenuItem({ id: Number(editId), ...data });
+      UI.showAlert(`"${name}" updated.`);
+    } else {
+      Data.addMenuItem(data);
+      UI.showAlert(`"${name}" added to menu.`);
+    }
+
+    UI.closeModal('item-modal');
+    renderTable();
+  });
+
+  renderTable();
+});
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(str || ''));
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

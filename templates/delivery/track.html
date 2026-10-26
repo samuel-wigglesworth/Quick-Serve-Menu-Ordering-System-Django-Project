@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Delivery Tracking for Order #{{ order.pk }}</h2>
+<p><strong>Rider:</strong> {{ status.rider_name|default:"Not assigned" }}</p>
+<p><strong>Current Location:</strong> {{ status.current_location|default:"Not updated" }}</p>
+<p><strong>ETA:</strong> {{ status.eta|default:"Not updated" }}</p>
+<p><strong>Last Update:</strong> {{ status.updated_at }}</p>
+{% endblock %}

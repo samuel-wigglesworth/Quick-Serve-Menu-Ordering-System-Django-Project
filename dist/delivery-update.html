@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Delivery – Quick Serve</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="topbar">
+    <a href="index.html" class="topbar-brand">Quick Serve</a>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <a href="#" id="topbar-logout">Sign out</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 id="page-title">Update Delivery</h1>
+          <p>Set delivery details for this order.</p>
+        </div>
+        <a href="delivery.html" class="btn btn-secondary">Back to Tracking</a>
+      </div>
+
+      <div class="card form-wrap">
+        <div id="alert-area"></div>
+        <form id="delivery-form" novalidate>
+          <div class="form-group">
+            <label for="rider-name">Rider Name</label>
+            <input class="form-control" type="text" id="rider-name" placeholder="e.g. Marcus T.">
+          </div>
+          <div class="form-group">
+            <label for="current-location">Current Location</label>
+            <input class="form-control" type="text" id="current-location" placeholder="e.g. 3rd & Main St">
+          </div>
+          <div class="form-group">
+            <label for="eta">ETA</label>
+            <input class="form-control" type="text" id="eta" placeholder="e.g. 15 minutes">
+          </div>
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a id="view-order" href="#" class="btn btn-secondary">View Order</a>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <footer>Quick Serve Menu Ordering System &copy; 2024</footer>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/nav.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = Auth.require(true);
+  if (!user) return;
+  UI.renderTopbar(user);
+  renderSidebar('delivery', user);
+
+  const orderId = Number(new URLSearchParams(location.search).get('id'));
+  const order = Data.getOrder(orderId);
+  if (!order) { document.getElementById('alert-area').innerHTML = '<div class="alert alert-error">Order not found.</div>'; return; }
+
+  document.getElementById('page-title').textContent = `Update Delivery – Order #${orderId}`;
+  document.getElementById('view-order').href = `order-detail.html?id=${orderId}`;
+
+  const existing = Data.getDelivery(orderId);
+  if (existing) {
+    document.getElementById('rider-name').value       = existing.rider_name       || '';
+    document.getElementById('current-location').value = existing.current_location || '';
+    document.getElementById('eta').value              = existing.eta              || '';
+  }
+
+  document.getElementById('delivery-form').addEventListener('submit', e => {
+    e.preventDefault();
+    Data.saveDelivery(orderId, {
+      rider_name:       document.getElementById('rider-name').value.trim(),
+      current_location: document.getElementById('current-location').value.trim(),
+      eta:              document.getElementById('eta').value.trim(),
+    });
+    document.getElementById('alert-area').innerHTML = '<div class="alert alert-success">Delivery details saved.</div>';
+    setTimeout(() => window.location.href = `order-detail.html?id=${orderId}`, 1200);
+  });
+});
+</script>
+</body>
+</html>
