@@ -1,0 +1,69 @@
+# ── Python / Django ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pycache
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static_root/
+
+# Distribution / packaging
+dist_django/
+build/
+*.egg-info/
+*.egg
+*.whl
+*.manifest
+
+# ── Node / JS (if any tooling is added later) ───────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# ── OS / Editor ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ── Secrets / Credentials ────────────────────────────────────
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+
+# ── Zip artifacts ─────────────────────────────────────────────
+*.zip
+
+# The dist/ folder IS committed so Cloudflare Pages deploys from it.
+# Remove the line below if you want to exclude it (e.g. for CI builds).
+# dist/

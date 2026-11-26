@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% load rupee_filter %}
+
+{% block title %}Dashboard | QuickServe{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── KPI Cards ───────────────────────────────── */
+  .kpi-card {
+    border-radius: 12px;
+    border: none;
+    transition: transform .18s ease, box-shadow .18s ease;
+    overflow: hidden;
+  }
+  .kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.14) !important;
+  }
+  .kpi-icon-wrap {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .kpi-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .kpi-label {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    opacity: .75;
+  }
+
+  /* ── Recent-orders table ─────────────────────── */
+  .orders-card {
+    border-radius: 12px;
+    border: none;
+  }
+  .orders-card thead th {
+    font-size: .75rem;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    border-bottom: 2px solid rgba(0,0,0,.08);
+  }
+  .order-row:hover { background-color: rgba(255,107,0,.04); }
+  .order-id { font-weight: 700; color: var(--qs-saffron); }
+
+  /* ── Chart card ──────────────────────────────── */
+  .chart-card {
+    border-radius: 12px;
+    border: none;
+  }
+
+  /* ── Quick Actions ───────────────────────────── */
+  .quick-actions .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    padding: .55rem 1.1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ═══════════════════════════════════════════════════
+   PAGE HEADER
+   ═══════════════════════════════════════════════════ #}
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">
+  <div>
+    <h1 class="h3 mb-1 fw-bold">
+      <i class="fa fa-tachometer-alt me-2 text-saffron"></i>Staff Dashboard
+    </h1>
+    <p class="text-muted mb-0 small">
+      <i class="fa fa-calendar-alt me-1"></i>{% now "l, d F Y" %}
+    </p>
+  </div>
+
+  {# ── Quick Actions ── #}
+  <div class="quick-actions d-flex flex-wrap gap-2">
+    <a href="{% url 'order-create' %}" class="btn btn-warning shadow-sm">
+      <i class="fa fa-plus me-1"></i>New Order
+    </a>
+    <a href="{% url 'menu-manage' %}" class="btn btn-outline-secondary shadow-sm">
+      <i class="fa fa-utensils me-1"></i>Manage Menu
+    </a>
+    <a href="{% url 'reports' %}" class="btn btn-outline-secondary shadow-sm">
+      <i class="fa fa-chart-bar me-1"></i>View Reports
+    </a>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════
+   ROW 1 — KPI CARDS
+   ═══════════════════════════════════════════════════ #}
+<div class="row g-4 mb-4">
+
+  {# ── Total Orders ── #}
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'order-history' %}" class="text-decoration-none">
+      <div class="card kpi-card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="kpi-icon-wrap bg-saffron text-white">
+            <i class="fa fa-clipboard-list"></i>
+          </div>
+          <div>
+            <div class="kpi-number text-dark">{{ total_orders }}</div>
+            <div class="kpi-label text-muted">Total Orders</div>
+          </div>
+        </div>
+        <div style="height:4px; background:var(--qs-saffron); opacity:.85;"></div>
+      </div>
+    </a>
+  </div>
+
+  {# ── Pending Orders ── #}
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'order-history' %}?status=pending" class="text-decoration-none">
+      <div class="card kpi-card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="kpi-icon-wrap text-white" style="background-color:#ffc107;">
+            <i class="fa fa-hourglass-half"></i>
+          </div>
+          <div>
+            <div class="kpi-number text-dark">{{ pending_orders }}</div>
+            <div class="kpi-label text-muted">Pending Orders</div>
+          </div>
+        </div>
+        <div style="height:4px; background:#ffc107; opacity:.85;"></div>
+      </div>
+    </a>
+  </div>
+
+  {# ── Customers ── #}
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'customer-list' %}" class="text-decoration-none">
+      <div class="card kpi-card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="kpi-icon-wrap text-white" style="background-color:#17a2b8;">
+            <i class="fa fa-users"></i>
+          </div>
+          <div>
+            <div class="kpi-number text-dark">{{ total_customers }}</div>
+            <div class="kpi-label text-muted">Customers</div>
+          </div>
+        </div>
+        <div style="height:4px; background:#17a2b8; opacity:.85;"></div>
+      </div>
+    </a>
+  </div>
+
+  {# ── Menu Items ── #}
+  <div class="col-sm-6 col-md-3">
+    <a href="{% url 'menu-manage' %}" class="text-decoration-none">
+      <div class="card kpi-card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+          <div class="kpi-icon-wrap text-white" style="background-color:#28a745;">
+            <i class="fa fa-utensils"></i>
+          </div>
+          <div>
+            <div class="kpi-number text-dark">{{ total_menu_items }}</div>
+            <div class="kpi-label text-muted">Menu Items</div>
+          </div>
+        </div>
+        <div style="height:4px; background:#28a745; opacity:.85;"></div>
+      </div>
+    </a>
+  </div>
+
+</div><!-- /row KPIs -->
+
+
+{# ═══════════════════════════════════════════════════
+   ROW 2 — RECENT ORDERS TABLE + WEEKLY CHART
+   ═══════════════════════════════════════════════════ #}
+<div class="row g-4">
+
+  {# ── Recent Orders (left, 8 columns) ── #}
+  <div class="col-lg-8">
+    <div class="card orders-card shadow-sm h-100">
+      <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
+        <span class="fw-bold">
+          <i class="fa fa-history me-2 text-saffron"></i>Recent Orders
+        </span>
+        <a href="{% url 'order-history' %}" class="btn btn-sm btn-outline-warning">
+          View All <i class="fa fa-arrow-right ms-1"></i>
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_orders %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+              <tr>
+                <th class="ps-3">Order</th>
+                <th>Customer</th>
+                <th>Time</th>
+                <th class="text-center">Items</th>
+                <th class="text-end">Total</th>
+                <th class="text-center">Status</th>
+                <th class="text-center pe-3">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in recent_orders %}
+              <tr class="order-row">
+                <td class="ps-3">
+                  <span class="order-id">#{{ order.pk }}</span>
+                </td>
+                <td>
+                  <i class="fa fa-user me-1 text-muted small"></i>
+                  {{ order.customer.username }}
+                </td>
+                <td class="text-muted small">
+                  {{ order.created_at|timesince }} ago
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-light text-dark border">
+                    {{ order.items.count }}
+                  </span>
+                </td>
+                <td class="text-end fw-semibold">
+                  {{ order.total_amount|rupee }}
+                </td>
+                <td class="text-center">
+                  {% if order.status == 'pending' %}
+                    <span class="badge" style="background-color:#ffc107;color:#212529;">
+                      <i class="fa fa-clock me-1"></i>Pending
+                    </span>
+                  {% elif order.status == 'preparing' %}
+                    <span class="badge" style="background-color:#fd7e14;color:#fff;">
+                      <i class="fa fa-fire me-1"></i>Preparing
+                    </span>
+                  {% elif order.status == 'ready' %}
+                    <span class="badge bg-info text-dark">
+                      <i class="fa fa-check-circle me-1"></i>Ready
+                    </span>
+                  {% elif order.status == 'dispatched' %}
+                    <span class="badge" style="background-color:#6f42c1;color:#fff;">
+                      <i class="fa fa-truck me-1"></i>Dispatched
+                    </span>
+                  {% elif order.status == 'delivered' %}
+                    <span class="badge bg-success">
+                      <i class="fa fa-check-double me-1"></i>Delivered
+                    </span>
+                  {% elif order.status == 'cancelled' %}
+                    <span class="badge bg-secondary">
+                      <i class="fa fa-times me-1"></i>Cancelled
+                    </span>
+                  {% else %}
+                    <span class="badge bg-light text-dark">{{ order.get_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-center pe-3">
+                  <a href="{% url 'order-manage' order.pk %}"
+                     class="btn btn-sm btn-outline-warning">
+                    <i class="fa fa-edit me-1"></i>Manage
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="fa fa-inbox fa-3x mb-3 d-block opacity-50"></i>
+          <p class="mb-2">No orders yet.</p>
+          <a href="{% url 'order-create' %}" class="btn btn-warning btn-sm">
+            <i class="fa fa-plus me-1"></i>Place First Order
+          </a>
+        </div>
+        {% endif %}
+      </div>
+      {% if recent_orders %}
+      <div class="card-footer bg-white border-top text-end py-2">
+        <a href="{% url 'order-history' %}" class="text-saffron small fw-semibold">
+          View All Orders <i class="fa fa-arrow-right ms-1"></i>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div><!-- /col-lg-8 -->
+
+  {# ── Weekly Chart (right, 4 columns) ── #}
+  <div class="col-lg-4">
+    <div class="card chart-card shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-3">
+        <span class="fw-bold">
+          <i class="fa fa-chart-line me-2 text-saffron"></i>Orders This Week
+        </span>
+      </div>
+      <div class="card-body d-flex flex-column justify-content-center">
+        <canvas id="weeklyChart" height="250"></canvas>
+      </div>
+    </div>
+  </div><!-- /col-lg-4 -->
+
+</div><!-- /row recent + chart -->
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function () {
+  const labels = {{ chart_labels_json|safe }};
+  const data   = {{ chart_data_json|safe }};
+
+  new Chart(document.getElementById('weeklyChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Orders',
+        data,
+        borderColor: '#FF6B00',
+        backgroundColor: 'rgba(255,107,0,0.15)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#FF6B00',
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: function(ctx) { return ctx[0].label; },
+            label: function(ctx) { return ' ' + ctx.parsed.y + ' order' + (ctx.parsed.y !== 1 ? 's' : ''); }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1, precision: 0 },
+          grid: { color: 'rgba(0,0,0,.06)' }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}());
+</script>
+{% endblock %}

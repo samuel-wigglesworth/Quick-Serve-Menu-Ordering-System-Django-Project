@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu – Quick Serve</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="topbar">
+    <a href="index.html" class="topbar-brand">Quick Serve</a>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <a href="#" id="topbar-logout">Sign out</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Menu</h1>
+          <p>Browse our available items and place an order.</p>
+        </div>
+        <a href="order-create.html" class="btn btn-primary">Place Order</a>
+      </div>
+
+      <!-- Search & filter bar -->
+      <div class="card" style="padding:.9rem 1.25rem; margin-bottom:1.25rem;">
+        <div class="flex gap-2 items-center" style="flex-wrap:wrap;">
+          <input class="form-control" type="search" id="search-input" placeholder="Search items..." style="max-width:280px;">
+          <select class="form-control" id="availability-filter" style="max-width:180px;">
+            <option value="all">All items</option>
+            <option value="available" selected>Available only</option>
+          </select>
+          <span class="text-muted text-sm" id="item-count"></span>
+        </div>
+      </div>
+
+      <div class="menu-grid" id="menu-grid"></div>
+    </main>
+  </div>
+
+  <footer>Quick Serve Menu Ordering System &copy; 2024</footer>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/nav.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = Auth.require();
+  if (!user) return;
+  UI.renderTopbar(user);
+  renderSidebar('menu', user);
+
+  let allItems = Data.getMenuItems();
+
+  function render() {
+    const q    = document.getElementById('search-input').value.toLowerCase();
+    const avail = document.getElementById('availability-filter').value;
+    let items = allItems;
+    if (avail === 'available') items = items.filter(i => i.is_available);
+    if (q) items = items.filter(i => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
+
+    document.getElementById('item-count').textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+
+    const grid = document.getElementById('menu-grid');
+    if (items.length === 0) {
+      grid.innerHTML = '<p class="text-muted">No items match your search.</p>';
+      return;
+    }
+    grid.innerHTML = items.map(item => `
+      <div class="menu-card">
+        <div class="menu-card-name">${escHtml(item.name)}</div>
+        <div class="menu-card-desc">${escHtml(item.description) || '<em class="text-muted">No description</em>'}</div>
+        <div class="menu-card-footer">
+          <span class="menu-card-price">${UI.formatCurrency(item.price)}</span>
+          <span class="badge ${item.is_available ? 'badge-available' : 'badge-unavailable'}">
+            ${item.is_available ? 'Available' : 'Unavailable'}
+          </span>
+        </div>
+        ${item.is_available ? `<a href="order-create.html?item=${item.id}" class="btn btn-primary btn-sm mt-1">Order Now</a>` : ''}
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('search-input').addEventListener('input', render);
+  document.getElementById('availability-filter').addEventListener('change', render);
+  render();
+});
+
+function escHtml(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(str || ''));
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

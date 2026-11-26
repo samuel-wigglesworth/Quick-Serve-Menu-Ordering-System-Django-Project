@@ -1,0 +1,576 @@
+/*
+ * theme.css — Quick Serve Indian Restaurant Visual Theme
+ * =======================================================
+ * This file is the single source of truth for the application's colour
+ * palette, typography, and component overrides.  Every other template
+ * inherits from these CSS custom properties.
+ *
+ * Load order in base.html:
+ *   1. Bootstrap 5 (CDN)
+ *   2. Google Fonts (CDN)
+ *   3. This file ({% static 'css/theme.css' %})
+ */
+
+/* ─────────────────────────────────────────────
+   1. GOOGLE FONTS IMPORT
+   Playfair Display — elegant serif for headings
+   Lato            — clean sans-serif for body
+   ──────────────────────���────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap');
+
+
+/* ─────────────────────────────────────────────
+   2. CSS CUSTOM PROPERTIES (DESIGN TOKENS)
+   Central palette — change once, update everywhere
+   ───────────────────────────────────────────── */
+:root {
+  /* Primary saffron — calls to action, active links */
+  --color-saffron:  #FF6B00;
+
+  /* Deep red — navbar, danger accents */
+  --color-deep-red: #C0392B;
+
+  /* Off-white cream — page background */
+  --color-cream:    #FFF8F0;
+
+  /* Near-black — primary text, headings */
+  --color-dark:     #1A1A2E;
+
+  /* Gold — highlights, secondary accents */
+  --color-gold:     #F39C12;
+
+  /* Semantic aliases used throughout */
+  --qs-saffron: var(--color-saffron);
+  --qs-red:     var(--color-deep-red);
+  --qs-bg:      var(--color-cream);
+  --qs-text:    var(--color-dark);
+
+  /* Typography scale */
+  --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body:    'Lato', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Transition shorthand reused by cards and buttons */
+  --transition-hover: 0.3s ease;
+}
+
+
+/* ─────────────────────────────────────────────
+   3. BASE BODY STYLES
+   ───────────────────────────────────────────── */
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-cream);
+  color: var(--color-dark);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ─────────────────────────────────────────────
+   4. HEADING TYPOGRAPHY
+   Playfair Display applied to h1–h4 for a
+   restaurant-menu, editorial feel
+   ───────────────────────────────────────────── */
+h1,
+h2,
+h3,
+h4,
+.qs-heading {
+  font-family: var(--font-heading);
+  color: var(--color-dark);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+h2 { font-size: clamp(1.4rem,  3vw, 2rem);   }
+h3 { font-size: clamp(1.2rem,  2.5vw, 1.6rem); }
+h4 { font-size: 1.25rem; }
+
+
+/* ─────────────────────────────────────────────
+   5. NAVBAR
+   Deep red background, white text and links
+   ───────────────────────────────────────────── */
+.navbar,
+.navbar.navbar-dark {
+  background-color: var(--color-deep-red) !important;
+}
+
+.navbar-brand {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff !important;
+  letter-spacing: 0.03em;
+}
+
+/* Nav links */
+.navbar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.90) !important;
+  transition: color var(--transition-hover);
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus {
+  color: var(--color-gold) !important;
+}
+
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-item.active > .nav-link {
+  color: #fff !important;
+  font-weight: 700;
+  border-bottom: 2px solid var(--color-gold);
+}
+
+/* Hamburger toggler */
+.navbar-toggler-icon {
+  filter: invert(1);
+}
+
+
+/* ─────────────────────────────────────────────
+   6. SIDEBAR (staff navigation)
+   Dark background with saffron active state
+   ───────────────────────────────────────────── */
+#qs-sidebar,
+.qs-sidebar {
+  background-color: var(--color-dark);
+  color: #fff;
+  min-height: 100vh;
+  padding-top: 1rem;
+}
+
+.qs-sidebar .nav-link {
+  color: rgba(255, 255, 255, 0.80);
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  margin: 2px 8px;
+  transition: background-color var(--transition-hover), color var(--transition-hover);
+}
+
+.qs-sidebar .nav-link:hover,
+.qs-sidebar .nav-link:focus {
+  background-color: rgba(255, 107, 0, 0.15);
+  color: var(--color-saffron);
+}
+
+.qs-sidebar .nav-link.active,
+.qs-sidebar .nav-item.active > .nav-link {
+  background-color: var(--color-saffron);
+  color: #fff;
+  font-weight: 600;
+}
+
+.qs-sidebar .sidebar-heading {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 0.75rem 1rem 0.25rem;
+}
+
+
+/* ─────────────────────────────────────────────
+   7. BOOTSTRAP PRIMARY BUTTON OVERRIDE
+   Replace Bootstrap's default blue primary
+   with the saffron brand colour
+   ───────────────────────────────────────────── */
+.btn-primary,
+.btn-warning {
+  background-color: var(--color-saffron) !important;
+  border-color: var(--color-saffron) !important;
+  color: #fff !important;
+  font-weight: 600;
+  transition: background-color var(--transition-hover), box-shadow var(--transition-hover);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-warning:hover,
+.btn-warning:focus {
+  background-color: #e05c00 !important;
+  border-color: #e05c00 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.35);
+}
+
+.btn-danger {
+  background-color: var(--color-deep-red) !important;
+  border-color: var(--color-deep-red) !important;
+}
+
+.btn-danger:hover,
+.btn-danger:focus {
+  background-color: #a93226 !important;
+  border-color: #a93226 !important;
+}
+
+
+/* ─────────────────────────────────────────────
+   8. CARD HOVER EFFECT
+   Subtle lift on hover using transform + shadow
+   ───────────────────────────────────────────── */
+.card {
+  border: none;
+  border-radius: 10px;
+  transition: transform var(--transition-hover), box-shadow var(--transition-hover);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Keep Bootstrap's shadow-sm on cards that don't hover */
+.card.shadow-sm {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+
+/* ─────────────────────────────────────────────
+   9. HERO SECTION
+   Full-width banner: saffron → deep-red gradient
+   White text, generous padding
+   ───────────────────────────────────────────── */
+.qs-hero {
+  /* Gradient overlay on top of any background-image */
+  background: linear-gradient(
+    135deg,
+    var(--color-saffron) 0%,
+    var(--color-deep-red) 100%
+  );
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  padding: 80px 20px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 0 0 16px 16px;
+}
+
+/* When a background-image is provided, darken it via pseudo-element */
+.qs-hero.has-bg-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 107, 0, 0.75) 0%,
+    rgba(192, 57, 43, 0.85) 100%
+  );
+  z-index: 0;
+}
+
+.qs-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.qs-hero h1,
+.qs-hero h2,
+.qs-hero p {
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.qs-hero .lead {
+  font-size: 1.15rem;
+  opacity: 0.92;
+}
+
+
+/* ─────────────────────────────────────────────
+   10. FOOTER
+   Dark background, white text
+   ───────────────────────────────────────────── */
+footer,
+.qs-footer {
+  background-color: var(--color-dark);
+  color: rgba(255, 255, 255, 0.85);
+  padding: 40px 20px;
+  font-size: 0.9rem;
+}
+
+.qs-footer a {
+  color: var(--color-gold);
+  text-decoration: none;
+}
+
+.qs-footer a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.qs-footer .footer-brand {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  color: #fff;
+}
+
+.qs-footer .footer-tagline {
+  color: var(--color-gold);
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+
+/* ─────────────────────────────────────────────
+   11. FLASH MESSAGES
+   Bootstrap alerts styled to match the palette.
+   Auto-dismiss is handled via JavaScript in
+   base.html; these styles refine appearance only.
+   ───────────────────────────────────────────── */
+
+/* Success — green with a saffron accent strip */
+.alert-success {
+  background-color: #d4edda;
+  border-left: 4px solid var(--color-gold);
+  color: #155724;
+}
+
+/* Error / danger — deep red accent */
+.alert-danger {
+  background-color: #f8d7da;
+  border-left: 4px solid var(--color-deep-red);
+  color: #721c24;
+}
+
+/* Info — neutral warm tone */
+.alert-info {
+  background-color: #fff3cd;
+  border-left: 4px solid var(--color-saffron);
+  color: #856404;
+}
+
+/* Warning — saffron-tinted */
+.alert-warning {
+  background-color: #fff3cd;
+  border-left: 4px solid var(--color-gold);
+  color: #663d00;
+}
+
+
+/* ─────────────────────────────────────────────
+   12. DATATABLES CUSTOM STYLES
+   Override DataTables defaults to match the
+   saffron/deep-red palette and Lato typography
+   ───────────────────────────────────────────── */
+
+/* Search input */
+.dataTables_wrapper .dataTables_filter input {
+  border: 1px solid rgba(192, 57, 43, 0.4);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-body);
+  transition: border-color var(--transition-hover);
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+  border-color: var(--color-saffron);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.15);
+}
+
+/* Length select dropdown */
+.dataTables_wrapper .dataTables_length select {
+  border: 1px solid rgba(192, 57, 43, 0.4);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+}
+
+/* Pagination buttons */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  background: var(--color-saffron) !important;
+  border-color: var(--color-saffron) !important;
+  color: #fff !important;
+  border-radius: 6px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background: rgba(255, 107, 0, 0.12) !important;
+  border-color: transparent !important;
+  color: var(--color-saffron) !important;
+  border-radius: 6px;
+}
+
+/* Table header sort indicator colour */
+.dataTables_wrapper table.dataTable thead th.sorting,
+.dataTables_wrapper table.dataTable thead th.sorting_asc,
+.dataTables_wrapper table.dataTable thead th.sorting_desc {
+  color: var(--color-dark);
+  background-color: rgba(192, 57, 43, 0.06);
+}
+
+/* Row hover — warm cream */
+.dataTables_wrapper table.dataTable tbody tr:hover {
+  background-color: rgba(255, 107, 0, 0.05);
+}
+
+/* Info text ("Showing 1 to 10 of …") */
+.dataTables_wrapper .dataTables_info {
+  font-size: 0.85rem;
+  color: rgba(26, 26, 46, 0.65);
+}
+
+
+/* ─────────────────────────────────────────────
+   13. FOOD CARD IMAGE
+   Fixed height with cover fit so all cards
+   share identical proportions regardless of the
+   source image's aspect ratio
+   ───────────────────────────────────────────── */
+.food-card-img,
+.card-img-top.food-card-img {
+  height: 220px;
+  object-fit: cover;
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+}
+
+/* Placeholder when image_url is empty */
+.qs-placeholder-img {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    var(--color-deep-red) 0%,
+    var(--color-saffron) 100%
+  );
+  color: #fff;
+  font-size: 3rem;
+  border-radius: 10px 10px 0 0;
+}
+
+/* Thumbnail variant used in DataTable rows */
+.food-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.qs-placeholder-thumb {
+  width: 80px;
+  height: 80px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-saffron);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 1.5rem;
+}
+
+
+/* ─────────────────────────────────────────────
+   14. RUPEE SYMBOL HELPER
+   Ensures the ₹ glyph renders at a consistent
+   weight wherever it appears inline
+   ───────────────────────────────────────────── */
+.rupee-symbol {
+  font-weight: bold;
+  font-family: var(--font-body);
+}
+
+
+/* ─────────────────────────────────────────────
+   15. MISCELLANEOUS UTILITIES
+   Small helpers used across multiple templates
+   ───────────────────────────────────────────── */
+
+/* Saffron text colour utility */
+.text-saffron  { color: var(--color-saffron) !important; }
+.text-deep-red { color: var(--color-deep-red) !important; }
+.text-gold     { color: var(--color-gold) !important; }
+
+/* Saffron background utility */
+.bg-saffron  { background-color: var(--color-saffron) !important; }
+.bg-deep-red { background-color: var(--color-deep-red) !important; }
+.bg-dark-qs  { background-color: var(--color-dark) !important; }
+
+/* Status badge colours aligned to Order.Status values */
+.badge-pending    { background-color: var(--color-gold);     color: #000; }
+.badge-preparing  { background-color: var(--color-saffron);  color: #fff; }
+.badge-ready      { background-color: #27ae60;               color: #fff; }
+.badge-dispatched { background-color: #2980b9;               color: #fff; }
+.badge-delivered  { background-color: #1e8449;               color: #fff; }
+.badge-cancelled  { background-color: #7f8c8d;               color: #fff; }
+
+/* Delivery step-progress indicator */
+.qs-step-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 1rem 0;
+}
+
+.qs-step {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(26, 26, 46, 0.5);
+  position: relative;
+}
+
+.qs-step::before {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #dee2e6;
+  margin: 0 auto 6px;
+  border: 2px solid #dee2e6;
+}
+
+.qs-step.active::before {
+  background-color: var(--color-saffron);
+  border-color: var(--color-saffron);
+}
+
+.qs-step.done::before {
+  background-color: #1e8449;
+  border-color: #1e8449;
+}
+
+/* KPI stat card accent */
+.qs-stat-card {
+  border-left: 5px solid var(--color-saffron);
+}
+
+.qs-stat-card.qs-stat-red {
+  border-left-color: var(--color-deep-red);
+}
+
+.qs-stat-card.qs-stat-gold {
+  border-left-color: var(--color-gold);
+}
+
+/* Form focus ring in saffron */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-saffron);
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 0, 0.2);
+}
+
+/* Table inside a card — remove double border */
+.card .table {
+  margin-bottom: 0;
+}
+
+/* Responsive table wrapper */
+.qs-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}

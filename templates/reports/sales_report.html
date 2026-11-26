@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Sales Report</h2>
+<p><strong>Total Orders:</strong> {{ total_orders }}</p>
+<p><strong>Delivered Orders:</strong> {{ delivered_orders }}</p>
+
+<h3>Top Ordered Items</h3>
+<table>
+    <tr>
+        <th>Item</th>
+        <th>Quantity</th>
+    </tr>
+    {% for item in top_items %}
+    <tr>
+        <td>{{ item.menu_item__name }}</td>
+        <td>{{ item.total_quantity }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="2">No data available.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

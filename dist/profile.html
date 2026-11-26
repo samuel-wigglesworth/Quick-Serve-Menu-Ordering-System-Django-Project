@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile – Quick Serve</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="topbar">
+    <a href="index.html" class="topbar-brand">Quick Serve</a>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <a href="#" id="topbar-logout">Sign out</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>My Profile</h1>
+          <p>Update your contact details.</p>
+        </div>
+      </div>
+
+      <div class="card form-wrap">
+        <div id="alert-area"></div>
+        <form id="profile-form" novalidate>
+          <div class="form-group">
+            <label>Username</label>
+            <input class="form-control" type="text" id="username" disabled>
+            <div class="form-hint">Username cannot be changed.</div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input class="form-control" type="email" id="email">
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input class="form-control" type="tel" id="phone" placeholder="e.g. 555-0100">
+          </div>
+          <div class="form-group">
+            <label for="address">Delivery Address</label>
+            <textarea class="form-control" id="address" rows="3" placeholder="Your default delivery address"></textarea>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--clr-border); margin:1rem 0;">
+          <div class="card-title" style="margin-bottom:.75rem;">Change Password</div>
+          <div class="form-group">
+            <label for="current-password">Current Password</label>
+            <input class="form-control" type="password" id="current-password" autocomplete="current-password" placeholder="Leave blank to keep current">
+            <div class="field-error hidden" id="err-current-password"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-password">New Password</label>
+              <input class="form-control" type="password" id="new-password" autocomplete="new-password" placeholder="Min. 6 characters">
+              <div class="field-error hidden" id="err-new-password"></div>
+            </div>
+            <div class="form-group">
+              <label for="confirm-password">Confirm New Password</label>
+              <input class="form-control" type="password" id="confirm-password" autocomplete="new-password" placeholder="">
+              <div class="field-error hidden" id="err-confirm-password"></div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary mt-1">Save Changes</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <footer>Quick Serve Menu Ordering System &copy; 2024</footer>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/nav.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const session = Auth.require();
+  if (!session) return;
+  UI.renderTopbar(session);
+  renderSidebar('profile', session);
+
+  const user = Data.getUser(session.id);
+  if (!user) return;
+
+  document.getElementById('username').value = user.username;
+  document.getElementById('email').value    = user.email   || '';
+  document.getElementById('phone').value    = user.phone   || '';
+  document.getElementById('address').value  = user.address || '';
+
+  document.getElementById('profile-form').addEventListener('submit', e => {
+    e.preventDefault();
+    // Reset errors
+    ['current-password','new-password','confirm-password'].forEach(f => {
+      document.getElementById('err-' + f).classList.add('hidden');
+      document.getElementById(f).classList.remove('error');
+    });
+
+    const currentPw = document.getElementById('current-password').value;
+    const newPw     = document.getElementById('new-password').value;
+    const confirmPw = document.getElementById('confirm-password').value;
+    let valid = true;
+
+    if (currentPw || newPw || confirmPw) {
+      if (user.password !== currentPw) {
+        document.getElementById('err-current-password').textContent = 'Current password is incorrect.';
+        document.getElementById('err-current-password').classList.remove('hidden');
+        document.getElementById('current-password').classList.add('error');
+        valid = false;
+      }
+      if (newPw.length < 6) {
+        document.getElementById('err-new-password').textContent = 'New password must be at least 6 characters.';
+        document.getElementById('err-new-password').classList.remove('hidden');
+        document.getElementById('new-password').classList.add('error');
+        valid = false;
+      }
+      if (newPw !== confirmPw) {
+        document.getElementById('err-confirm-password').textContent = 'Passwords do not match.';
+        document.getElementById('err-confirm-password').classList.remove('hidden');
+        document.getElementById('confirm-password').classList.add('error');
+        valid = false;
+      }
+    }
+    if (!valid) return;
+
+    user.email   = document.getElementById('email').value.trim();
+    user.phone   = document.getElementById('phone').value.trim();
+    user.address = document.getElementById('address').value.trim();
+    if (currentPw && newPw && valid) user.password = newPw;
+
+    Data.saveUser(user);
+    document.getElementById('alert-area').innerHTML = '<div class="alert alert-success">Profile updated successfully.</div>';
+    // Clear password fields
+    ['current-password','new-password','confirm-password'].forEach(f => document.getElementById(f).value = '');
+  });
+});
+</script>
+</body>
+</html>
