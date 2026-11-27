@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports &amp; Analytics | QuickServe Staff</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- DataTables 1.13 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.7/css/dataTables.bootstrap5.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+          <div>
+            <h1 class="h2 mb-1">Sales Reports &amp; Analytics</h1>
+            <p class="text-muted mb-0 small">Comprehensive financial KPIs, top selling dishes, and order status breakdowns.</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+              <i class="fa fa-print me-1"></i> Print Report
+            </button>
+            <a href="menu-manage.html" class="btn btn-outline-primary btn-sm">
+              <i class="fa fa-utensils me-1"></i> Manage Menu
+            </a>
+          </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4" id="kpi-grid"></div>
+
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+          <!-- Top 5 Most Ordered Items -->
+          <div class="col-lg-6">
+            <div class="card p-3 p-lg-4 shadow-sm h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0"><i class="fa fa-trophy text-saffron me-2"></i>Top 5 Most Ordered Dishes</h5>
+                <span class="badge bg-light text-dark border">By Quantity</span>
+              </div>
+              <div style="position:relative; height:280px;">
+                <canvas id="topItemsChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Orders by Status -->
+          <div class="col-lg-6">
+            <div class="card p-3 p-lg-4 shadow-sm h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0"><i class="fa fa-chart-pie text-saffron me-2"></i>Orders by Status Breakdown</h5>
+                <span class="badge bg-light text-dark border">All Time</span>
+              </div>
+              <div style="position:relative; height:280px;">
+                <canvas id="statusDonutChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Master Sales Data Table Card -->
+        <div class="card p-3 p-lg-4 shadow-sm mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <h5 class="card-title mb-0"><i class="fa fa-table text-saffron me-2"></i>Full Orders Audit Table</h5>
+              <small class="text-muted">Interactive DataTables audit log with sorting, search, and pagination</small>
+            </div>
+          </div>
+
+          <div class="table-responsive p-1">
+            <table class="table table-hover align-middle w-100" id="report-orders-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Dish Items</th>
+                  <th>Subtotal</th>
+                  <th>Tax (5%)</th>
+                  <th>Grand Total</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="report-orders-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+
+    <footer class="qs-footer mt-auto">
+    <div class="container-xl text-center">
+      <span class="fw-bold"><i class="fa fa-utensils text-warning me-2"></i>QuickServe</span>
+      <span class="ms-2 text-muted">— Online Food Ordering &amp; Kitchen Management</span>
+      <div class="mt-1 small text-muted opacity-75">&copy; 2026 QuickServe. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.7/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Auth.require(true);
+    if (!user) return;
+    renderNavigation('reports', user);
+
+    const orders    = Data.getOrders();
+    const menuItems = Data.getMenuItems();
+
+    // KPIs
+    const totalOrders = orders.length;
+    const delivered   = orders.filter(o => o.status === 'delivered').length;
+    const pending     = orders.filter(o => ['pending','preparing','ready','dispatched'].includes(o.status)).length;
+    const totalRev    = orders.reduce((sum, o) => sum + Data.getOrderTotal(o), 0);
+    const avgOrderVal = totalOrders ? Math.round(totalRev / totalOrders) : 0;
+
+    document.getElementById('kpi-grid').innerHTML = `
+      <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card shadow-sm h-100">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="kpi-label">Gross Revenue</div>
+              <div class="kpi-value text-saffron mt-1">${UI.formatCurrency(totalRev)}</div>
+            </div>
+            <div class="kpi-icon-wrap bg-warning-subtle text-saffron"><i class="fa fa-wallet"></i></div>
+          </div>
+          <small class="text-muted mt-2 d-block">From all customer orders</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card kpi-gold shadow-sm h-100">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="kpi-label">Total Bookings</div>
+              <div class="kpi-value mt-1">${totalOrders}</div>
+            </div>
+            <div class="kpi-icon-wrap bg-light text-dark"><i class="fa fa-receipt"></i></div>
+          </div>
+          <small class="text-muted mt-2 d-block">Lifetime food orders</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card kpi-blue shadow-sm h-100">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="kpi-label">Average Order Value</div>
+              <div class="kpi-value text-primary mt-1">${UI.formatCurrency(avgOrderVal)}</div>
+            </div>
+            <div class="kpi-icon-wrap bg-primary-subtle text-primary"><i class="fa fa-calculator"></i></div>
+          </div>
+          <small class="text-muted mt-2 d-block">Average spend per order</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card kpi-green shadow-sm h-100">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="kpi-label">Fulfilled Orders</div>
+              <div class="kpi-value text-success mt-1">${delivered}</div>
+            </div>
+            <div class="kpi-icon-wrap bg-success-subtle text-success"><i class="fa fa-check-circle"></i></div>
+          </div>
+          <small class="text-muted mt-2 d-block">Delivered successfully</small>
+        </div>
+      </div>
+    `;
+
+    // Calculate Top Items
+    const itemCounts = {};
+    orders.forEach(o => {
+      (o.items || []).forEach(li => {
+        itemCounts[li.menu_item_id] = (itemCounts[li.menu_item_id] || 0) + li.quantity;
+      });
+    });
+
+    const topItems = Object.entries(itemCounts)
+      .map(([id, qty]) => {
+        const item = menuItems.find(m => m.id === Number(id));
+        return { name: item ? item.name : `Dish #${id}`, qty };
+      })
+      .sort((a,b) => b.qty - a.qty)
+      .slice(0, 5);
+
+    // Chart.js 1: Top Items Bar Chart
+    const ctxTop = document.getElementById('topItemsChart').getContext('2d');
+    new Chart(ctxTop, {
+      type: 'bar',
+      data: {
+        labels: topItems.length ? topItems.map(i => i.name) : ['No Orders Yet'],
+        datasets: [{
+          label: 'Units Sold',
+          data: topItems.length ? topItems.map(i => i.qty) : [0],
+          backgroundColor: '#FF6B00',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+
+    // Chart.js 2: Status Donut Chart
+    const ctxStatus = document.getElementById('statusDonutChart').getContext('2d');
+    const statusLabels = ['Delivered', 'Dispatched', 'Ready', 'Preparing', 'Pending', 'Cancelled'];
+    const statusValues = statusLabels.map(l => orders.filter(o => o.status === l.toLowerCase()).length);
+
+    new Chart(ctxStatus, {
+      type: 'doughnut',
+      data: {
+        labels: statusLabels,
+        datasets: [{
+          data: statusValues.some(c => c > 0) ? statusValues : [0, 0, 0, 0, 1, 0],
+          backgroundColor: ['#27ae60', '#2980b9', '#2ecc71', '#FF6B00', '#F39C12', '#95a5a6'],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        }
+      }
+    });
+
+    // Populate Report Table
+    const tbody = document.getElementById('report-orders-tbody');
+    tbody.innerHTML = orders.map(o => {
+      const cust = Data.getUser(o.customer_id);
+      const subtotal = Data.getOrderSubtotal(o);
+      const tax = Data.getOrderTax(o);
+      const total = Data.getOrderTotal(o);
+      const itemsStr = (o.items || []).map(li => {
+        const item = Data.getMenuItem(li.menu_item_id);
+        return item ? `${item.name} (x${li.quantity})` : '';
+      }).filter(Boolean).join(', ');
+
+      return `
+        <tr>
+          <td><a href="order-detail.html?id=${o.id}" class="fw-bold text-saffron text-decoration-none">#${o.id}</a></td>
+          <td>
+            <div class="fw-bold text-dark">${cust ? (cust.full_name || cust.username) : 'Customer'}</div>
+            <small class="text-muted">${cust ? cust.phone : ''}</small>
+          </td>
+          <td><span class="text-truncate d-inline-block small" style="max-width:240px;" title="${itemsStr}">${itemsStr}</span></td>
+          <td class="small text-muted">${UI.formatCurrency(subtotal)}</td>
+          <td class="small text-muted">${UI.formatCurrency(tax)}</td>
+          <td class="fw-bold text-dark">${UI.formatCurrency(total)}</td>
+          <td>${UI.statusBadge(o.status)}</td>
+          <td class="small text-muted">${UI.formatDate(o.created_at)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    $('#report-orders-table').DataTable({
+      pageLength: 10,
+      order: [[0, 'desc']],
+      language: {
+        search: "_INPUT_",
+        searchPlaceholder: "Search sales logs..."
+      }
+    });
+  });
+  </script>
+</body>
+</html>

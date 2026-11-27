@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load static %}
+{% load rupee_filter %}
+
+{% block title %}
+  {% if request.user.is_staff %}Order History | QuickServe{% else %}My Orders | QuickServe{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">
+      <i class="fa fa-clipboard-list me-2 text-warning"></i>
+      {% if request.user.is_staff %}
+        All Orders
+        <span class="badge bg-warning text-dark ms-2 fs-6">{{ orders|length }}</span>
+      {% else %}
+        My Orders
+      {% endif %}
+    </h1>
+    <p class="text-muted mb-0">
+      {% if request.user.is_staff %}
+        Complete order history across all customers.
+      {% else %}
+        Your order history and current order status.
+      {% endif %}
+    </p>
+  </div>
+  {% if request.user.is_staff %}
+  <a href="{% url 'order-create' %}" class="btn btn-warning">
+    <i class="fa fa-plus me-1"></i>Place New Order
+  </a>
+  {% endif %}
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table id="ordersTable" class="table table-striped table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Order #</th>
+          {% if request.user.is_staff %}<th>Customer</th>{% endif %}
+          <th>Date</th>
+          <th>Items</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td class="fw-semibold text-warning">#{{ order.pk }}</td>
+          {% if request.user.is_staff %}
+          <td><i class="fa fa-user me-1 text-muted"></i>{{ order.customer.username }}</td>
+          {% endif %}
+          <td>{{ order.created_at|date:"d M Y, H:i" }}</td>
+          <td>
+            <small class="text-muted">
+              {% for line in order.items.all %}
+                {{ line.quantity }}× {{ line.menu_item.name }}{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                <span class="text-muted fst-italic">No items</span>
+              {% endfor %}
+            </small>
+          </td>
+          <td class="fw-semibold">{{ order.total_amount|rupee }}</td>
+          <td>
+            {% if order.status == 'pending' %}
+              <span class="badge" style="background-color:#ffc107; color:#212529;">
+                <i class="fa fa-clock me-1"></i>Pending
+              </span>
+            {% elif order.status == 'preparing' %}
+              <span class="badge" style="background-color:#fd7e14; color:#fff;">
+                <i class="fa fa-fire me-1"></i>Preparing
+              </span>
+            {% elif order.status == 'ready' %}
+              <span class="badge bg-info text-dark">
+                <i class="fa fa-check-circle me-1"></i>Ready
+              </span>
+            {% elif order.status == 'dispatched' %}
+              <span class="badge" style="background-color:#6f42c1; color:#fff;">
+                <i class="fa fa-truck me-1"></i>Dispatched
+              </span>
+            {% elif order.status == 'delivered' %}
+              <span class="badge bg-success">
+                <i class="fa fa-check-double me-1"></i>Delivered
+              </span>
+            {% elif order.status == 'cancelled' %}
+              <span class="badge bg-secondary">
+                <i class="fa fa-times me-1"></i>Cancelled
+              </span>
+            {% else %}
+              <span class="badge bg-light text-dark">{{ order.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <div class="d-flex flex-wrap gap-1 justify-content-center">
+
+              {# View button — always visible #}
+              <a href="{% url 'order-detail' order.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fa fa-eye me-1"></i>View
+              </a>
+
+              {# Track button — hidden for delivered and cancelled #}
+              {% if order.status != 'delivered' and order.status != 'cancelled' %}
+              <a href="{% url 'delivery-track' order.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="fa fa-map-marker-alt me-1"></i>Track
+              </a>
+              {% endif %}
+
+              {% if request.user.is_staff %}
+                {# Staff: Manage button to update status #}
+                <a href="{% url 'order-manage' order.pk %}" class="btn btn-sm btn-outline-warning">
+                  <i class="fa fa-edit me-1"></i>Manage
+                </a>
+
+                {# Staff: Delete button — only for cancelled orders #}
+                {% if order.status == 'cancelled' %}
+                <form method="post" action="{% url 'order-delete' order.pk %}" class="d-inline"
+                      onsubmit="return confirm('Permanently delete this cancelled order? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fa fa-trash me-1"></i>Delete
+                  </button>
+                </form>
+                {% endif %}
+
+              {% else %}
+                {# Customer: Cancel button — only for pending orders #}
+                {% if order.status == 'pending' %}
+                <form method="post" action="{% url 'order-cancel' order.pk %}" class="d-inline"
+                      onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fa fa-times me-1"></i>Cancel
+                  </button>
+                </form>
+                {% endif %}
+              {% endif %}
+
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="{% if request.user.is_staff %}7{% else %}6{% endif %}" class="text-center py-5 text-muted">
+            <i class="fa fa-inbox fa-3x mb-3 d-block"></i>
+            {% if request.user.is_staff %}
+              No orders have been placed yet.
+            {% else %}
+              You haven't placed any orders yet.
+              <br>
+              <a href="{% url 'order-create' %}" class="btn btn-warning mt-3">
+                <i class="fa fa-plus me-1"></i>Place Your First Order
+              </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function () {
+  $('#ordersTable').DataTable({
+    order: [[0, 'desc']],
+    pageLength: 15,
+    language: {
+      emptyTable: "No orders found.",
+      zeroRecords: "No matching orders."
+    }
+  });
+});
+</script>
+{% endblock %}

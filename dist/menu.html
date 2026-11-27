@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Menu | QuickServe — Authentic Indian Flavours</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <!-- Hero Banner -->
+        <div class="qs-hero">
+          <div>
+            <span class="badge bg-warning text-dark px-3 py-1 mb-2 fw-bold text-uppercase">Fresh • Authentic • Royal</span>
+            <h1 class="display-5 fw-bold mb-2">Authentic Indian Flavours</h1>
+            <p class="lead mb-0">From royal Mughlai gravies to fragrant coastal biryanis and tandoor grills.</p>
+          </div>
+        </div>
+
+        <!-- Page Controls & Filter Bar -->
+        <div class="card p-3 shadow-sm mb-4">
+          <div class="row g-3 align-items-center justify-content-between">
+            <div class="col-md-5">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa fa-search"></i></span>
+                <input type="search" class="form-control border-start-0 ps-0" id="search-input" placeholder="Search dishes (e.g., Biryani, Paneer, Butter Chicken)...">
+              </div>
+            </div>
+
+            <div class="col-md-7 d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+              <div class="form-check form-switch me-2">
+                <input class="form-check-input" type="checkbox" id="veg-only-switch">
+                <label class="form-check-label fw-bold small" for="veg-only-switch">
+                  <span class="veg-badge me-1"></span> Veg Only
+                </label>
+              </div>
+
+              <select class="form-select form-select-sm w-auto" id="availability-select">
+                <option value="available" selected>Available Now</option>
+                <option value="all">All Dishes</option>
+              </select>
+
+              <a href="order-create.html" class="btn btn-sm btn-primary">
+                <i class="fa fa-cart-plus me-1"></i> Place Order
+              </a>
+            </div>
+          </div>
+
+          <!-- Category Pills -->
+          <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top" id="category-pills">
+            <button class="category-pill active" data-cat="all">All Dishes</button>
+            <button class="category-pill" data-cat="Starters">Starters &amp; Chaats</button>
+            <button class="category-pill" data-cat="Main Course">Main Course</button>
+            <button class="category-pill" data-cat="Biryani & Rice">Biryani &amp; Rice</button>
+            <button class="category-pill" data-cat="Breads">Tandoori Breads</button>
+            <button class="category-pill" data-cat="Desserts">Mithai &amp; Desserts</button>
+            <button class="category-pill" data-cat="Beverages">Beverages</button>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0 fw-bold" id="menu-heading">Our Chef's Special Menu</h4>
+          <span class="text-muted small" id="items-count-badge"></span>
+        </div>
+
+        <!-- Food Grid -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mb-5" id="menu-grid"></div>
+
+      </main>
+
+    <footer class="qs-footer mt-auto">
+    <div class="container-xl text-center">
+      <span class="fw-bold"><i class="fa fa-utensils text-warning me-2"></i>QuickServe</span>
+      <span class="ms-2 text-muted">— Online Food Ordering &amp; Kitchen Management</span>
+      <div class="mt-1 small text-muted opacity-75">&copy; 2026 QuickServe. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Auth.require();
+    if (!user) return;
+    renderNavigation('menu', user);
+
+    let activeCategory = 'all';
+    const allItems = Data.getMenuItems();
+
+    function render() {
+      const q = document.getElementById('search-input').value.trim().toLowerCase();
+      const vegOnly = document.getElementById('veg-only-switch').checked;
+      const avail = document.getElementById('availability-select').value;
+
+      let filtered = allItems;
+      if (avail === 'available') filtered = filtered.filter(i => i.is_available);
+      if (vegOnly) filtered = filtered.filter(i => i.is_veg);
+      if (activeCategory !== 'all') filtered = filtered.filter(i => i.category === activeCategory);
+      if (q) filtered = filtered.filter(i => i.name.toLowerCase().includes(q) || (i.description || '').toLowerCase().includes(q));
+
+      document.getElementById('items-count-badge').textContent = `Showing ${filtered.length} of ${allItems.length} dishes`;
+
+      const grid = document.getElementById('menu-grid');
+      if (!filtered.length) {
+        grid.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <i class="fa fa-utensils fa-3x text-muted mb-3 d-block"></i>
+            <h5 class="text-muted">No dishes match your filter.</h5>
+            <button class="btn btn-sm btn-outline-warning mt-2" onclick="resetFilters()">Reset All Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(item => `
+        <div class="col">
+          <div class="card food-card h-100 shadow-sm border-0 ${!item.is_available ? 'opacity-75' : ''}">
+            <div class="food-card-img-wrap">
+              <img src="${item.image_url}" alt="${item.name}" class="food-card-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600'">
+              <div class="position-absolute top-0 start-0 m-2">
+                <span class="badge bg-dark bg-opacity-75 text-white small">${item.category || 'Special'}</span>
+              </div>
+              <div class="position-absolute top-0 end-0 m-2">
+                <span class="bg-white rounded p-1 shadow-sm d-inline-flex align-items-center justify-content-center">
+                  ${UI.vegBadge(item.is_veg)}
+                </span>
+              </div>
+            </div>
+
+            <div class="card-body d-flex flex-column p-3">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <h5 class="card-title h6 mb-0 fw-bold text-dark">${item.name}</h5>
+                <span class="fw-bold text-saffron fs-5 ms-2">${UI.formatCurrency(item.price)}</span>
+              </div>
+
+              <p class="card-text text-muted small flex-grow-1 mb-3" style="line-height:1.45;">
+                ${item.description || 'Authentic traditional recipe prepared with fresh aromatic spices.'}
+              </p>
+
+              <div class="d-flex align-items-center justify-content-between mt-auto pt-2 border-top">
+                <span class="badge ${item.is_available ? 'badge-delivered' : 'badge-cancelled'} status-badge">
+                  <i class="fa ${item.is_available ? 'fa-check' : 'fa-times'}"></i> ${item.is_available ? 'Available' : 'Sold Out'}
+                </span>
+
+                ${item.is_available ? `
+                  <a href="order-create.html?item=${item.id}" class="btn btn-sm btn-primary">
+                    <i class="fa fa-cart-plus me-1"></i> Order Now
+                  </a>
+                ` : `
+                  <button class="btn btn-sm btn-secondary" disabled>Unavailable</button>
+                `}
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Category pills click
+    document.querySelectorAll('#category-pills .category-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#category-pills .category-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeCategory = btn.dataset.cat;
+        render();
+      });
+    });
+
+    document.getElementById('search-input').addEventListener('input', render);
+    document.getElementById('veg-only-switch').addEventListener('change', render);
+    document.getElementById('availability-select').addEventListener('change', render);
+
+    window.resetFilters = function() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('veg-only-switch').checked = false;
+      document.getElementById('availability-select').value = 'all';
+      activeCategory = 'all';
+      document.querySelectorAll('#category-pills .category-pill').forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
+      render();
+    };
+
+    render();
+  });
+  </script>
+</body>
+</html>

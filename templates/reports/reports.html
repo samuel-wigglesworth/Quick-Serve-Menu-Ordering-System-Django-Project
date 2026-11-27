@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% load rupee_filter %}
+
+{% block title %}Reports & Analytics | QuickServe{% endblock %}
+
+{% block extra_css %}
+<style>
+  .kpi-card {
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  }
+  .kpi-icon {
+    font-size: 2.4rem;
+    line-height: 1;
+  }
+  .kpi-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .kpi-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+  .kpi-accent-saffron { border-top: 4px solid #FF6B00; }
+  .kpi-accent-green   { border-top: 4px solid #27AE60; }
+  .kpi-accent-blue    { border-top: 4px solid #2980B9; }
+  .kpi-accent-orange  { border-top: 4px solid #F39C12; }
+
+  .kpi-icon-saffron { color: #FF6B00; }
+  .kpi-icon-green   { color: #27AE60; }
+  .kpi-icon-blue    { color: #2980B9; }
+  .kpi-icon-orange  { color: #F39C12; }
+
+  .chart-card {
+    border: none;
+    border-radius: 12px;
+  }
+  .chart-card .card-header {
+    background: transparent;
+    border-bottom: 2px solid #f0f0f0;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 1rem 1.25rem 0.75rem;
+  }
+  .page-heading {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 2rem;
+    color: #2c2c2c;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<div class="d-flex align-items-center mb-4">
+  <div>
+    <h1 class="page-heading mb-0">Reports &amp; Analytics </h1>
+    <p class="text-muted mb-0 mt-1 small">Overview of orders, revenue, and customer activity</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     Row 1 — KPI Cards
+     ══════════════════════════════════════════════ -->
+<div class="row g-4 mb-4">
+
+  <!-- Total Orders -->
+  <div class="col-sm-6 col-md-3">
+    <div class="card kpi-card kpi-accent-saffron shadow-sm h-100 px-3 py-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="kpi-icon kpi-icon-saffron"></div>
+        <div>
+          <div class="kpi-value">{{ total_orders }}</div>
+          <div class="kpi-label text-secondary">Total Orders</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Revenue -->
+  <div class="col-sm-6 col-md-3">
+    <div class="card kpi-card kpi-accent-green shadow-sm h-100 px-3 py-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="kpi-icon kpi-icon-green"></div>
+        <div>
+          <div class="kpi-value">{{ total_revenue|rupee }}</div>
+          <div class="kpi-label text-secondary">Total Revenue</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customers -->
+  <div class="col-sm-6 col-md-3">
+    <div class="card kpi-card kpi-accent-blue shadow-sm h-100 px-3 py-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="kpi-icon kpi-icon-blue"></div>
+        <div>
+          <div class="kpi-value">{{ total_customers }}</div>
+          <div class="kpi-label text-secondary">Customers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Orders -->
+  <div class="col-sm-6 col-md-3">
+    <div class="card kpi-card kpi-accent-orange shadow-sm h-100 px-3 py-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="kpi-icon kpi-icon-orange">⏳</div>
+        <div>
+          <div class="kpi-value">{{ pending_orders }}</div>
+          <div class="kpi-label text-secondary">Pending Orders</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /Row 1 -->
+
+<!-- ══════════════════════════════════════════════
+     Row 2 — Bar + Doughnut charts
+     ══════════════════════════════════════════════ -->
+<div class="row g-4 mb-4">
+
+  <!-- Bar chart: Top Menu Items -->
+  <div class="col-lg-8">
+    <div class="card chart-card shadow-sm h-100">
+      <div class="card-header">
+        <i class="fa fa-chart-bar me-2 text-warning"></i>Top Menu Items by Orders
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="barChart" height="300"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Doughnut chart: Order Status Breakdown -->
+  <div class="col-lg-4">
+    <div class="card chart-card shadow-sm h-100">
+      <div class="card-header">
+        <i class="fa fa-chart-pie me-2 text-danger"></i>Order Status Breakdown
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="doughnutChart" height="300"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /Row 2 -->
+
+<!-- ══════════════════════════════════════════════
+     Row 3 — Line chart (full width)
+     ══════════════════════════════════════════════ -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="card chart-card shadow-sm">
+      <div class="card-header">
+        <i class="fa fa-chart-line me-2 text-success"></i>Orders Per Day (Last 30 Days)
+      </div>
+      <div class="card-body">
+        <canvas id="lineChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+</div><!-- /Row 3 -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const barLabels      = {{ bar_labels_json|safe }};
+  const barData        = {{ bar_data_json|safe }};
+  const doughnutLabels = {{ doughnut_labels_json|safe }};
+  const doughnutData   = {{ doughnut_data_json|safe }};
+  const lineLabels     = {{ line_labels_json|safe }};
+  const lineData       = {{ line_data_json|safe }};
+
+  // ── Bar chart: Top Menu Items ──
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: barLabels,
+      datasets: [{
+        label: 'Orders',
+        data: barData,
+        backgroundColor: '#FF6B00',
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y} orders`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // ── Doughnut chart: Order Status Breakdown ──
+  new Chart(document.getElementById('doughnutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: doughnutLabels,
+      datasets: [{
+        data: doughnutData,
+        backgroundColor: [
+          '#FF6B00', '#C0392B', '#F39C12',
+          '#27AE60', '#2980B9', '#8E44AD'
+        ],
+        hoverOffset: 8,
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { padding: 16, font: { size: 12 } }
+        }
+      }
+    }
+  });
+
+  // ── Line chart: Orders Per Day ──
+  new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+      labels: lineLabels,
+      datasets: [{
+        label: 'Orders',
+        data: lineData,
+        borderColor: '#FF6B00',
+        backgroundColor: 'rgba(255, 107, 0, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#FF6B00',
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y} orders`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            maxTicksLimit: 10,
+            maxRotation: 45
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

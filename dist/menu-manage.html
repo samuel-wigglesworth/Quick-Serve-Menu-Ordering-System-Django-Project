@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Menu | QuickServe Staff</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- DataTables 1.13 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.7/css/dataTables.bootstrap5.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+          <div>
+            <h1 class="h2 mb-1">Manage Menu Items</h1>
+            <p class="text-muted mb-0 small">Add, edit, toggle availability, or remove Indian culinary dishes from your active menu.</p>
+          </div>
+          <button class="btn btn-primary shadow-sm" id="btn-add-item">
+            <i class="fa fa-plus-circle me-1"></i> Add New Dish
+          </button>
+        </div>
+
+        <!-- Menu DataTable Card -->
+        <div class="card p-3 p-lg-4 shadow-sm mb-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle w-100" id="menu-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Image</th>
+                  <th>Dish Name</th>
+                  <th>Category</th>
+                  <th>Diet</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="menu-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+
+  <!-- Add / Edit Dish Modal -->
+  <div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="itemModalTitle">Add Menu Dish</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="item-form" novalidate>
+          <div class="modal-body">
+            <input type="hidden" id="item-edit-id">
+
+            <div class="mb-3">
+              <label for="item-name" class="form-label small fw-bold">Dish Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="item-name" placeholder="e.g. Paneer Butter Masala" required>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="item-category" class="form-label small fw-bold">Category</label>
+                <select class="form-select" id="item-category">
+                  <option value="Starters">Starters &amp; Chaats</option>
+                  <option value="Main Course" selected>Main Course</option>
+                  <option value="Biryani & Rice">Biryani &amp; Rice</option>
+                  <option value="Breads">Tandoori Breads</option>
+                  <option value="Desserts">Mithai &amp; Desserts</option>
+                  <option value="Beverages">Beverages</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label for="item-price" class="form-label small fw-bold">Price (₹) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" class="form-control" id="item-price" step="1" min="1" placeholder="250" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="item-desc" class="form-label small fw-bold">Description</label>
+              <textarea class="form-control" id="item-desc" rows="2" placeholder="Ingredients, spice profile, serving style..."></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="item-image" class="form-label small fw-bold">Food Photo URL</label>
+              <input type="url" class="form-control" id="item-image" placeholder="https://images.unsplash.com/...">
+              <small class="text-muted">Enter a direct image link or leave blank for default.</small>
+            </div>
+
+            <div class="d-flex gap-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="item-is-veg" checked>
+                <label class="form-check-label small fw-bold" for="item-is-veg">Pure Vegetarian (Green Badge)</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="item-is-available" checked>
+                <label class="form-check-label small fw-bold" for="item-is-available">Available on Menu</label>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="btn-save-item">Save Dish</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-danger"><i class="fa fa-trash-alt me-2"></i>Delete Dish</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete <strong id="delete-item-name"></strong> from the restaurant menu?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger btn-sm" id="btn-confirm-delete">Delete Dish</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <footer class="qs-footer mt-auto">
+    <div class="container-xl text-center">
+      <span class="fw-bold"><i class="fa fa-utensils text-warning me-2"></i>QuickServe</span>
+      <span class="ms-2 text-muted">— Online Food Ordering &amp; Kitchen Management</span>
+      <div class="mt-1 small text-muted opacity-75">&copy; 2026 QuickServe. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.7/js/dataTables.bootstrap5.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Auth.require(true);
+    if (!user) return;
+    renderNavigation('menu-manage', user);
+
+    let dataTableInstance = null;
+    let itemToDelete = null;
+
+    function renderTable() {
+      const items = Data.getMenuItems();
+
+      if (dataTableInstance) {
+        dataTableInstance.destroy();
+      }
+
+      const tbody = document.getElementById('menu-tbody');
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td>
+            <img src="${item.image_url}" alt="${item.name}" class="food-thumb" onerror="this.src='https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600'">
+          </td>
+          <td>
+            <div class="fw-bold text-dark">${item.name}</div>
+            <small class="text-muted d-block text-truncate" style="max-width:280px;">${item.description || '—'}</small>
+          </td>
+          <td><span class="badge bg-light text-dark border">${item.category || 'Special'}</span></td>
+          <td>${UI.vegBadge(item.is_veg)} <small class="text-muted ms-1">${item.is_veg ? 'Veg' : 'Non-Veg'}</small></td>
+          <td class="fw-bold text-saffron fs-6">${UI.formatCurrency(item.price)}</td>
+          <td>
+            <button class="btn btn-sm ${item.is_available ? 'btn-outline-success' : 'btn-outline-secondary'} btn-toggle-avail" data-id="${item.id}" title="Click to toggle availability">
+              <i class="fa ${item.is_available ? 'fa-check-circle' : 'fa-times-circle'} me-1"></i>
+              ${item.is_available ? 'Available' : 'Unavailable'}
+            </button>
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-primary btn-edit" data-id="${item.id}" title="Edit Dish">
+                <i class="fa fa-pencil-alt"></i> Edit
+              </button>
+              <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}" data-name="${item.name}" title="Delete Dish">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      dataTableInstance = $('#menu-table').DataTable({
+        pageLength: 10,
+        order: [[1, 'asc']],
+        language: {
+          search: "_INPUT_",
+          searchPlaceholder: "Search dishes, categories..."
+        }
+      });
+
+      // Toggle availability
+      document.querySelectorAll('.btn-toggle-avail').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          const item = Data.getMenuItem(id);
+          if (item) {
+            item.is_available = !item.is_available;
+            Data.saveMenuItem(item);
+            UI.showAlert(`${item.name} is now ${item.is_available ? 'Available' : 'Unavailable'}`, 'info');
+            renderTable();
+          }
+        });
+      });
+
+      // Edit Dish
+      document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          const item = Data.getMenuItem(id);
+          if (!item) return;
+
+          document.getElementById('itemModalTitle').textContent = 'Edit Menu Dish';
+          document.getElementById('item-edit-id').value = item.id;
+          document.getElementById('item-name').value = item.name;
+          document.getElementById('item-category').value = item.category || 'Main Course';
+          document.getElementById('item-price').value = item.price;
+          document.getElementById('item-desc').value = item.description || '';
+          document.getElementById('item-image').value = item.image_url || '';
+          document.getElementById('item-is-veg').checked = Boolean(item.is_veg);
+          document.getElementById('item-is-available').checked = Boolean(item.is_available);
+
+          new bootstrap.Modal(document.getElementById('itemModal')).show();
+        });
+      });
+
+      // Delete Dish
+      document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => {
+          itemToDelete = Number(btn.dataset.id);
+          document.getElementById('delete-item-name').textContent = btn.dataset.name;
+          new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        });
+      });
+    }
+
+    // Add Dish Button
+    document.getElementById('btn-add-item').addEventListener('click', () => {
+      document.getElementById('itemModalTitle').textContent = 'Add New Dish';
+      document.getElementById('item-edit-id').value = '';
+      document.getElementById('item-name').value = '';
+      document.getElementById('item-category').value = 'Main Course';
+      document.getElementById('item-price').value = '';
+      document.getElementById('item-desc').value = '';
+      document.getElementById('item-image').value = '';
+      document.getElementById('item-is-veg').checked = true;
+      document.getElementById('item-is-available').checked = true;
+
+      new bootstrap.Modal(document.getElementById('itemModal')).show();
+    });
+
+    // Save Dish Form Submit
+    document.getElementById('item-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('item-name').value.trim();
+      const price = Number(document.getElementById('item-price').value);
+      if (!name || isNaN(price) || price <= 0) {
+        alert('Please provide a valid dish name and price.');
+        return;
+      }
+
+      const editId = document.getElementById('item-edit-id').value;
+      const data = {
+        name,
+        category: document.getElementById('item-category').value,
+        price,
+        description: document.getElementById('item-desc').value.trim(),
+        image_url: document.getElementById('item-image').value.trim() || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600',
+        is_veg: document.getElementById('item-is-veg').checked,
+        is_available: document.getElementById('item-is-available').checked
+      };
+
+      if (editId) {
+        data.id = Number(editId);
+        Data.saveMenuItem(data);
+        UI.showAlert(`Dish "${name}" updated successfully.`, 'success');
+      } else {
+        Data.addMenuItem(data);
+        UI.showAlert(`Dish "${name}" added to menu!`, 'success');
+      }
+
+      bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+      renderTable();
+    });
+
+    // Confirm Delete
+    document.getElementById('btn-confirm-delete').addEventListener('click', () => {
+      if (itemToDelete) {
+        Data.deleteMenuItem(itemToDelete);
+        bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+        UI.showAlert('Dish deleted from menu.', 'info');
+        renderTable();
+      }
+    });
+
+    renderTable();
+  });
+  </script>
+</body>
+</html>

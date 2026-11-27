@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{# menu_add.html — reuses the same layout as menu_edit.html.
+   The view passes only {"form": form} with no instance, so
+   form.instance.pk is falsy and all "Add" branches are taken. #}
+
+{% block title %}Add Menu Item | QuickServe{% endblock %}
+
+{% block content %}
+
+<!-- Page header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <h1 class="mb-0" style="font-family: 'Playfair Display', serif; font-weight: 700; color: var(--qs-saffron, #E07B39);">
+    <i class="fa fa-plus-circle me-2"></i>Add New Menu Item
+  </h1>
+  <a href="{% url 'menu-manage' %}" class="btn btn-outline-secondary">
+    <i class="fa fa-arrow-left me-1"></i>Back to Menu
+  </a>
+</div>
+
+<!-- Form card -->
+<div class="row justify-content-center">
+  <div class="col-lg-7 col-md-9">
+    <div class="card shadow-sm border-0">
+      <div class="card-header py-3" style="background: linear-gradient(135deg, var(--qs-saffron, #E07B39), #c0622c); color: #fff;">
+        <h5 class="mb-0 fw-semibold">
+          <i class="fa fa-utensils me-2"></i>New Menu Item
+        </h5>
+      </div>
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <!-- Name -->
+          <div class="mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa fa-tag me-1 text-muted"></i>Item Name <span class="text-danger">*</span>
+            </label>
+            {{ form.name }}
+            {% if form.name.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.name.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Description -->
+          <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa fa-align-left me-1 text-muted"></i>Description
+            </label>
+            {{ form.description }}
+            {% if form.description.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.description.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Price -->
+          <div class="mb-3">
+            <label for="{{ form.price.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa fa-rupee-sign me-1 text-muted"></i>Price <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text fw-bold">₹</span>
+              {{ form.price }}
+            </div>
+            {% if form.price.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.price.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Image URL -->
+          <div class="mb-3">
+            <label for="{{ form.image_url.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa fa-image me-1 text-muted"></i>Image URL
+            </label>
+            {{ form.image_url }}
+            {% if form.image_url.help_text %}
+              <div class="form-text text-muted">
+                <i class="fa fa-info-circle me-1"></i>{{ form.image_url.help_text }}
+              </div>
+            {% endif %}
+            {% if form.image_url.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.image_url.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+            <!-- Live image preview (hidden until a URL is entered) -->
+            <div class="mt-2">
+              <img id="imagePreview"
+                   src=""
+                   alt="Image preview"
+                   class="img-thumbnail rounded shadow-sm"
+                   style="max-height: 180px; max-width: 100%; display: none;">
+            </div>
+          </div>
+
+          <!-- Is Available -->
+          <div class="mb-4">
+            <div class="form-check form-switch">
+              {{ form.is_available }}
+              <label class="form-check-label fw-semibold ms-1" for="{{ form.is_available.id_for_label }}">
+                Available on Menu
+              </label>
+            </div>
+            <div class="form-text text-muted">
+              <i class="fa fa-info-circle me-1"></i>Uncheck to hide this item from customers without deleting it.
+            </div>
+            {% if form.is_available.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.is_available.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Action buttons -->
+          <div class="d-flex gap-2 justify-content-end pt-2 border-top">
+            <a href="{% url 'menu-manage' %}" class="btn btn-outline-secondary">
+              <i class="fa fa-times me-1"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-warning fw-semibold shadow-sm px-4">
+              <i class="fa fa-plus me-1"></i>Add Item
+            </button>
+          </div>
+
+        </form>
+      </div><!-- /.card-body -->
+    </div><!-- /.card -->
+  </div><!-- /.col -->
+</div><!-- /.row -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('id_image_url').addEventListener('input', function () {
+    const preview = document.getElementById('imagePreview');
+    preview.src = this.value;
+    preview.style.display = this.value ? 'block' : 'none';
+  });
+</script>
+{% endblock %}

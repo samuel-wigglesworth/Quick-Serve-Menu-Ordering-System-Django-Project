@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Order Status | QuickServe Staff</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+          <div>
+            <h1 class="h2 mb-1" id="page-title">Manage Order Status</h1>
+            <p class="text-muted mb-0 small">Update preparation stage, kitchen notifications, and delivery dispatch.</p>
+          </div>
+          <a href="orders.html" class="btn btn-outline-secondary">
+            <i class="fa fa-arrow-left me-1"></i> Back to Orders
+          </a>
+        </div>
+
+        <div class="row">
+          <div class="col-md-8 col-lg-6">
+            <div class="card p-4 shadow-sm">
+              <div class="mb-3 border-bottom pb-2">
+                <span class="text-muted small">Customer:</span>
+                <div class="fw-bold fs-6" id="order-customer">—</div>
+              </div>
+              <div class="mb-3 border-bottom pb-2">
+                <span class="text-muted small">Current Total:</span>
+                <div class="fw-bold fs-5 text-saffron" id="order-total">—</div>
+              </div>
+              <div class="mb-3 border-bottom pb-2">
+                <span class="text-muted small">Current Status:</span>
+                <div id="order-status-current" class="mt-1"></div>
+              </div>
+
+              <form id="status-form">
+                <div class="mb-4">
+                  <label for="new-status" class="form-label small fw-bold">Select New Status</label>
+                  <select class="form-select" id="new-status">
+                    <option value="pending">Pending (Order Placed)</option>
+                    <option value="preparing">Preparing (Cooking in Kitchen)</option>
+                    <option value="ready">Ready (Packaged &amp; Ready)</option>
+                    <option value="dispatched">Dispatched (Out for Delivery)</option>
+                    <option value="delivered">Delivered (Handed to Customer)</option>
+                    <option value="cancelled">Cancelled (Order Voided)</option>
+                  </select>
+                </div>
+
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-save me-1"></i> Update Status
+                  </button>
+                  <a id="view-detail-btn" href="#" class="btn btn-outline-secondary">
+                    View Full Order
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Auth.require(true);
+    if (!user) return;
+    renderNavigation('orders', user);
+
+    const orderId = Number(new URLSearchParams(location.search).get('id'));
+    const order = Data.getOrder(orderId);
+    if (!order) {
+      document.getElementById('alert-area').innerHTML = '<div class="alert alert-danger">Order not found.</div>';
+      return;
+    }
+
+    document.getElementById('page-title').textContent = `Manage Order #${order.id}`;
+    const cust = Data.getUser(order.customer_id);
+    document.getElementById('order-customer').textContent = cust ? (cust.full_name || cust.username) : 'Guest';
+    document.getElementById('order-total').textContent = UI.formatCurrency(Data.getOrderTotal(order));
+    document.getElementById('order-status-current').innerHTML = UI.statusBadge(order.status);
+    document.getElementById('new-status').value = order.status;
+    document.getElementById('view-detail-btn').href = `order-detail.html?id=${order.id}`;
+
+    document.getElementById('status-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const newStatus = document.getElementById('new-status').value;
+      Data.updateOrderStatus(order.id, newStatus);
+      UI.showAlert(`Order #${order.id} status updated to ${newStatus.toUpperCase()}`, 'success');
+      setTimeout(() => window.location.href = `order-detail.html?id=${order.id}`, 800);
+    });
+  });
+  </script>
+</body>
+</html>

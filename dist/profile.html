@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile | QuickServe</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+          <div>
+            <h1 class="h2 mb-1"><i class="fa fa-user-circle text-saffron me-2"></i>My Profile &amp; Preferences</h1>
+            <p class="text-muted mb-0 small">Manage your contact number, delivery address, and security settings.</p>
+          </div>
+          <a href="index.html" class="btn btn-outline-secondary">
+            <i class="fa fa-arrow-left me-1"></i> Return to Dashboard
+          </a>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-lg-7">
+            <div class="card p-4 shadow-sm mb-4">
+              <h5 class="card-title border-bottom pb-2 mb-3">
+                <i class="fa fa-address-card text-saffron me-2"></i>Contact &amp; Delivery Information
+              </h5>
+
+              <form id="profile-form" novalidate>
+                <div class="row g-2 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-bold">Username</label>
+                    <input type="text" class="form-control" id="prof-username" disabled>
+                    <small class="text-muted">Username is fixed.</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-bold">Full Name</label>
+                    <input type="text" class="form-control" id="prof-fullname" placeholder="Enter your full name">
+                  </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-bold">Email Address</label>
+                    <input type="email" class="form-control" id="prof-email" placeholder="you@example.in">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-bold">Mobile Phone (+91)</label>
+                    <input type="tel" class="form-control" id="prof-phone" placeholder="+91 98765 43210">
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label small fw-bold">Default Delivery Address</label>
+                  <textarea class="form-control" id="prof-address" rows="3" placeholder="Flat No, Building, Landmark, City, State, PIN"></textarea>
+                  <small class="text-muted">This address will be automatically used during 1-click checkout.</small>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="fw-bold mb-3"><i class="fa fa-lock text-saffron me-2"></i>Change Password</h6>
+                <div class="row g-2 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-bold">New Password</label>
+                    <input type="password" class="form-control" id="prof-new-pass" placeholder="Leave blank to keep current">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-bold">Confirm Password</label>
+                    <input type="password" class="form-control" id="prof-confirm-pass" placeholder="Repeat new password">
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                  <i class="fa fa-save me-1"></i> Save Changes
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Account Summary -->
+          <div class="col-lg-5">
+            <div class="card p-4 shadow-sm mb-4">
+              <div class="text-center py-2 border-bottom pb-3 mb-3">
+                <div class="rounded-circle bg-warning text-dark fw-bold d-inline-flex align-items-center justify-content-center mb-2" style="width:68px; height:68px; font-size:1.8rem;" id="user-avatar-initial">
+                  U
+                </div>
+                <h5 class="fw-bold mb-0 text-dark" id="display-user-name">User</h5>
+                <span class="badge bg-warning text-dark mt-1" id="display-user-role">Customer</span>
+              </div>
+
+              <div class="d-flex justify-content-between py-2 border-bottom small">
+                <span class="text-muted"><i class="fa fa-calendar-check text-saffron me-1"></i> Member Since:</span>
+                <span class="fw-bold text-dark">January 2026</span>
+              </div>
+              <div class="d-flex justify-content-between py-2 border-bottom small">
+                <span class="text-muted"><i class="fa fa-shopping-bag text-saffron me-1"></i> Orders Placed:</span>
+                <span class="fw-bold text-dark" id="stat-order-count">0</span>
+              </div>
+              <div class="d-flex justify-content-between py-2 small">
+                <span class="text-muted"><i class="fa fa-wallet text-saffron me-1"></i> Lifetime Spend:</span>
+                <span class="fw-bold text-saffron" id="stat-total-spent">₹0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+    <footer class="qs-footer mt-auto">
+    <div class="container-xl text-center">
+      <span class="fw-bold"><i class="fa fa-utensils text-warning me-2"></i>QuickServe</span>
+      <span class="ms-2 text-muted">— Online Food Ordering &amp; Kitchen Management</span>
+      <div class="mt-1 small text-muted opacity-75">&copy; 2026 QuickServe. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const session = Auth.require();
+    if (!session) return;
+    renderNavigation('profile', session);
+
+    const user = Data.getUser(session.id);
+    if (!user) return;
+
+    document.getElementById('prof-username').value = user.username;
+    document.getElementById('prof-fullname').value = user.full_name || user.username;
+    document.getElementById('prof-email').value    = user.email || '';
+    document.getElementById('prof-phone').value    = user.phone || '';
+    document.getElementById('prof-address').value  = user.address || '';
+
+    const name = user.full_name || user.username;
+    document.getElementById('user-avatar-initial').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('display-user-name').textContent = name;
+    document.getElementById('display-user-role').textContent = user.is_staff ? 'Staff Administrator' : 'Customer';
+
+    const userOrders = Data.getOrdersForUser(user.id);
+    const spent = userOrders.reduce((sum, o) => sum + Data.getOrderTotal(o), 0);
+    document.getElementById('stat-order-count').textContent = userOrders.length;
+    document.getElementById('stat-total-spent').textContent = UI.formatCurrency(spent);
+
+    document.getElementById('profile-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const fn = document.getElementById('prof-fullname').value.trim();
+      const email = document.getElementById('prof-email').value.trim();
+      const phone = document.getElementById('prof-phone').value.trim();
+      const addr = document.getElementById('prof-address').value.trim();
+      const newPass = document.getElementById('prof-new-pass').value;
+      const confPass = document.getElementById('prof-confirm-pass').value;
+
+      if (newPass) {
+        if (newPass.length < 6) {
+          UI.showAlert('Password must be at least 6 characters.', 'error');
+          return;
+        }
+        if (newPass !== confPass) {
+          UI.showAlert('Passwords do not match.', 'error');
+          return;
+        }
+        user.password = newPass;
+      }
+
+      user.full_name = fn;
+      user.email = email;
+      user.phone = phone;
+      user.address = addr;
+
+      Data.saveUser(user);
+
+      // Update session
+      session.full_name = fn;
+      QS.set('session', session);
+
+      UI.showAlert('Profile updated successfully!', 'success');
+      setTimeout(() => location.reload(), 800);
+    });
+  });
+  </script>
+</body>
+</html>

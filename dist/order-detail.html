@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Details | QuickServe — Indian Food Ordering</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h1 class="h2 mb-0" id="page-order-title">Order #</h1>
+              <span id="order-status-badge"></span>
+            </div>
+            <p class="text-muted mb-0 small mt-1" id="order-date-text"></p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="orders.html" class="btn btn-outline-secondary">
+              <i class="fa fa-arrow-left me-1"></i> Back to Orders
+            </a>
+            <a href="delivery.html" class="btn btn-outline-primary">
+              <i class="fa fa-motorcycle me-1"></i> Delivery Tracking
+            </a>
+          </div>
+        </div>
+
+        <!-- 5-Step Visual Progress Tracker -->
+        <div class="card p-4 shadow-sm mb-4" id="tracker-card">
+          <h6 class="fw-bold text-dark mb-2"><i class="fa fa-map-marker-alt text-saffron me-2"></i>Live Order Status</h6>
+          <div class="tracker-steps" id="steps-container"></div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Left: Order Items Table -->
+          <div class="col-lg-8">
+            <div class="card p-3 p-lg-4 shadow-sm mb-4">
+              <h5 class="card-title border-bottom pb-2 mb-3">
+                <i class="fa fa-utensils text-saffron me-2"></i>Ordered Dishes
+              </h5>
+
+              <div class="table-responsive">
+                <table class="table align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Dish</th>
+                      <th>Category</th>
+                      <th>Unit Price</th>
+                      <th>Quantity</th>
+                      <th class="text-end">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody id="items-tbody"></tbody>
+                  <tfoot class="border-top" id="summary-tfoot"></tfoot>
+                </table>
+              </div>
+
+              <!-- Customer Notes -->
+              <div class="bg-light p-3 rounded-3 mt-3 border" id="notes-container" style="display:none;">
+                <div class="fw-bold small text-muted"><i class="fa fa-comment-dots text-saffron me-1"></i> Special Instructions / Cooking Notes:</div>
+                <div class="small text-dark mt-1" id="notes-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Customer & Delivery Info & Staff Actions -->
+          <div class="col-lg-4">
+            <!-- Delivery Info Card -->
+            <div class="card p-3 shadow-sm mb-3">
+              <h6 class="card-title border-bottom pb-2 mb-3">
+                <i class="fa fa-motorcycle text-saffron me-2"></i>Delivery Details
+              </h6>
+              <div class="small mb-2">
+                <div class="text-muted">Assigned Rider:</div>
+                <div class="fw-bold text-dark" id="rider-name-val">—</div>
+              </div>
+              <div class="small mb-2">
+                <div class="text-muted">Rider Contact:</div>
+                <div class="fw-bold text-dark" id="rider-phone-val">—</div>
+              </div>
+              <div class="small mb-2">
+                <div class="text-muted">Current Location:</div>
+                <div class="fw-bold text-dark" id="rider-loc-val">—</div>
+              </div>
+              <div class="small mb-2">
+                <div class="text-muted">Estimated Delivery (ETA):</div>
+                <span class="badge bg-warning-subtle text-dark border px-2 py-1 fw-bold" id="rider-eta-val">—</span>
+              </div>
+            </div>
+
+            <!-- Customer Details Card -->
+            <div class="card p-3 shadow-sm mb-3">
+              <h6 class="card-title border-bottom pb-2 mb-3">
+                <i class="fa fa-user text-saffron me-2"></i>Customer Information
+              </h6>
+              <div class="small mb-2">
+                <div class="text-muted">Name:</div>
+                <div class="fw-bold text-dark" id="cust-name-val">—</div>
+              </div>
+              <div class="small mb-2">
+                <div class="text-muted">Phone:</div>
+                <div class="fw-bold text-dark" id="cust-phone-val">—</div>
+              </div>
+              <div class="small mb-2">
+                <div class="text-muted">Delivery Address:</div>
+                <div class="small text-dark" id="cust-address-val">—</div>
+              </div>
+            </div>
+
+            <!-- Staff Control Card (Visible only to staff) -->
+            <div class="card p-3 shadow-sm border-warning" id="staff-controls" style="display:none;">
+              <h6 class="card-title text-warning-emphasis border-bottom pb-2 mb-3">
+                <i class="fa fa-shield-alt text-saffron me-2"></i>Staff Operations
+              </h6>
+              <div class="mb-3">
+                <label for="change-status-select" class="form-label small fw-bold">Update Order Status:</label>
+                <select class="form-select form-select-sm" id="change-status-select">
+                  <option value="pending">Pending</option>
+                  <option value="preparing">Preparing</option>
+                  <option value="ready">Ready</option>
+                  <option value="dispatched">Dispatched</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <button class="btn btn-sm btn-primary w-100 mb-2" id="btn-save-status">
+                <i class="fa fa-save me-1"></i> Update Status
+              </button>
+              <a id="btn-update-delivery-link" href="#" class="btn btn-sm btn-outline-secondary w-100">
+                <i class="fa fa-truck me-1"></i> Update Delivery Info
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+
+    <footer class="qs-footer mt-auto">
+    <div class="container-xl text-center">
+      <span class="fw-bold"><i class="fa fa-utensils text-warning me-2"></i>QuickServe</span>
+      <span class="ms-2 text-muted">— Online Food Ordering &amp; Kitchen Management</span>
+      <div class="mt-1 small text-muted opacity-75">&copy; 2026 QuickServe. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  const STEPS = ['pending', 'preparing', 'ready', 'dispatched', 'delivered'];
+  const STEP_LABELS = {
+    pending: 'Order Placed',
+    preparing: 'In Kitchen',
+    ready: 'Food Ready',
+    dispatched: 'Out for Delivery',
+    delivered: 'Delivered'
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Auth.require();
+    if (!user) return;
+    renderNavigation('orders', user);
+
+    const orderId = Number(new URLSearchParams(location.search).get('id'));
+    const isNew = new URLSearchParams(location.search).get('new') === '1';
+
+    const order = Data.getOrder(orderId);
+    if (!order) {
+      document.getElementById('alert-area').innerHTML = `
+        <div class="alert alert-danger shadow-sm">
+          <i class="fa fa-exclamation-triangle me-2"></i>Order #${orderId} was not found.
+          <a href="orders.html" class="alert-link ms-2">Return to Order History</a>
+        </div>
+      `;
+      return;
+    }
+
+    if (!user.is_staff && order.customer_id !== user.id) {
+      window.location.href = 'orders.html';
+      return;
+    }
+
+    if (isNew) {
+      UI.showAlert('Your order has been placed successfully! The kitchen has started preparing your food.', 'success');
+    }
+
+    document.getElementById('page-order-title').textContent = `Order #${order.id}`;
+    document.getElementById('order-status-badge').innerHTML = UI.statusBadge(order.status);
+    document.getElementById('order-date-text').textContent = `Placed on ${UI.formatDate(order.created_at)}`;
+
+    // Render Steps
+    const currentStepIndex = STEPS.indexOf(order.status);
+    const stepsContainer = document.getElementById('steps-container');
+    if (order.status === 'cancelled') {
+      stepsContainer.innerHTML = `
+        <div class="text-center text-muted py-2 w-100">
+          <span class="badge bg-secondary p-2 fs-6"><i class="fa fa-ban me-1"></i> This order was cancelled.</span>
+        </div>
+      `;
+    } else {
+      stepsContainer.innerHTML = STEPS.map((s, idx) => {
+        let cls = '';
+        if (idx < currentStepIndex) cls = 'done';
+        else if (idx === currentStepIndex) cls = 'current';
+
+        return `
+          <div class="tracker-step ${cls}">
+            <div class="step-dot">${idx < currentStepIndex ? '<i class="fa fa-check"></i>' : (idx + 1)}</div>
+            <div class="step-label">${STEP_LABELS[s]}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Items
+    const tbody = document.getElementById('items-tbody');
+    let subtotal = 0;
+    tbody.innerHTML = (order.items || []).map(li => {
+      const item = Data.getMenuItem(li.menu_item_id);
+      if (!item) return '';
+      const lineTotal = item.price * li.quantity;
+      subtotal += lineTotal;
+
+      return `
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <img src="${item.image_url}" alt="${item.name}" class="food-thumb" style="width:48px; height:48px;" onerror="this.src='https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600'">
+              <div>
+                <div class="d-flex align-items-center gap-1">
+                  ${UI.vegBadge(item.is_veg)}
+                  <span class="fw-bold text-dark">${item.name}</span>
+                </div>
+                <small class="text-muted d-block text-truncate" style="max-width:240px;">${item.description || ''}</small>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge bg-light text-dark border small">${item.category || 'Special'}</span></td>
+          <td class="text-muted">${UI.formatCurrency(item.price)}</td>
+          <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${li.quantity}</span></td>
+          <td class="text-end fw-bold text-dark">${UI.formatCurrency(lineTotal)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const tax = Math.round(subtotal * 0.05 * 100) / 100;
+    const total = subtotal + tax;
+
+    document.getElementById('summary-tfoot').innerHTML = `
+      <tr>
+        <td colspan="4" class="text-end text-muted small">Subtotal:</td>
+        <td class="text-end text-muted small fw-bold">${UI.formatCurrency(subtotal)}</td>
+      </tr>
+      <tr>
+        <td colspan="4" class="text-end text-muted small">GST (5%):</td>
+        <td class="text-end text-muted small fw-bold">${UI.formatCurrency(tax)}</td>
+      </tr>
+      <tr>
+        <td colspan="4" class="text-end text-muted small">Delivery Charges:</td>
+        <td class="text-end text-success small fw-bold">FREE</td>
+      </tr>
+      <tr class="table-light">
+        <td colspan="4" class="text-end fw-bold fs-5 text-dark">Grand Total:</td>
+        <td class="text-end fw-bold fs-5 text-saffron">${UI.formatCurrency(total)}</td>
+      </tr>
+    `;
+
+    // Notes
+    if (order.notes) {
+      document.getElementById('notes-container').style.display = 'block';
+      document.getElementById('notes-content').textContent = order.notes;
+    }
+
+    // Customer
+    const cust = Data.getUser(order.customer_id);
+    if (cust) {
+      document.getElementById('cust-name-val').textContent = cust.full_name || cust.username;
+      document.getElementById('cust-phone-val').textContent = cust.phone || '—';
+      document.getElementById('cust-address-val').textContent = order.delivery_address || cust.address || '—';
+    }
+
+    // Delivery
+    const delivery = Data.getDelivery(order.id);
+    if (delivery) {
+      document.getElementById('rider-name-val').textContent = delivery.rider_name || 'Rider Assigning';
+      document.getElementById('rider-phone-val').textContent = delivery.rider_phone || '—';
+      document.getElementById('rider-loc-val').textContent = delivery.current_location || 'Kitchen';
+      document.getElementById('rider-eta-val').textContent = delivery.eta || 'Estimating';
+    }
+
+    // Staff actions
+    if (user.is_staff) {
+      const staffBox = document.getElementById('staff-controls');
+      staffBox.style.display = 'block';
+      document.getElementById('change-status-select').value = order.status;
+      document.getElementById('btn-update-delivery-link').href = `delivery-update.html?id=${order.id}`;
+
+      document.getElementById('btn-save-status').addEventListener('click', () => {
+        const newStatus = document.getElementById('change-status-select').value;
+        Data.updateOrderStatus(order.id, newStatus);
+        UI.showAlert(`Status updated to ${newStatus.toUpperCase()}`, 'success');
+        setTimeout(() => location.reload(), 600);
+      });
+    }
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delivery Tracking | QuickServe — Indian Food Ordering</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- DataTables 1.13 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.7/css/dataTables.bootstrap5.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+          <div>
+            <h1 class="h2 mb-1">Live Delivery Tracking</h1>
+            <p class="text-muted mb-0 small">Real-time GPS status, assigned delivery riders, and estimated arrival times.</p>
+          </div>
+          <a href="orders.html" class="btn btn-outline-secondary">
+            <i class="fa fa-clipboard-list me-1"></i> View Order History
+          </a>
+        </div>
+
+        <!-- Active Deliveries Cards -->
+        <h5 class="fw-bold text-dark mb-3"><i class="fa fa-route text-saffron me-2"></i>Active Shipments</h5>
+        <div id="active-deliveries-list" class="mb-5 d-flex flex-column gap-3"></div>
+
+        <!-- All Deliveries DataTable -->
+        <div class="card p-3 p-lg-4 shadow-sm mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <h5 class="card-title mb-0"><i class="fa fa-truck text-saffron me-2"></i>All Delivery Dispatches</h5>
+              <small class="text-muted">Master delivery log with rider assignments and status history</small>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle w-100" id="delivery-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Rider Name</th>
+                  <th>Rider Phone</th>
+                  <th>Current Location</th>
+                  <th>ETA</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="delivery-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+
+    <footer class="qs-footer mt-auto">
+    <div class="container-xl text-center">
+      <span class="fw-bold"><i class="fa fa-utensils text-warning me-2"></i>QuickServe</span>
+      <span class="ms-2 text-muted">— Online Food Ordering &amp; Kitchen Management</span>
+      <div class="mt-1 small text-muted opacity-75">&copy; 2026 QuickServe. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.7/js/dataTables.bootstrap5.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  const STEPS = ['pending', 'preparing', 'ready', 'dispatched', 'delivered'];
+  const STEP_LABELS = {
+    pending: 'Order Placed',
+    preparing: 'In Kitchen',
+    ready: 'Ready',
+    dispatched: 'Out for Delivery',
+    delivered: 'Delivered'
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Auth.require();
+    if (!user) return;
+    renderNavigation('delivery', user);
+
+    const allOrders = user.is_staff ? Data.getOrders() : Data.getOrdersForUser(user.id);
+    const activeOrders = allOrders.filter(o => !['delivered', 'cancelled'].includes(o.status));
+
+    // Render Active Delivery Cards
+    const activeList = document.getElementById('active-deliveries-list');
+    if (!activeOrders.length) {
+      activeList.innerHTML = `
+        <div class="card p-4 text-center border-0 shadow-sm bg-white">
+          <i class="fa fa-motorcycle fa-3x text-muted mb-3 d-block"></i>
+          <h6 class="text-muted mb-1">No active deliveries at the moment.</h6>
+          <small class="text-muted">All current orders have reached their destination.</small>
+        </div>
+      `;
+    } else {
+      activeList.innerHTML = activeOrders.map(order => {
+        const cust = Data.getUser(order.customer_id);
+        const del  = Data.getDelivery(order.id) || {};
+        const stepIdx = STEPS.indexOf(order.status);
+
+        const stepsHtml = STEPS.map((s, idx) => {
+          let cls = '';
+          if (idx < stepIdx) cls = 'done';
+          else if (idx === stepIdx) cls = 'current';
+
+          return `
+            <div class="tracker-step ${cls}">
+              <div class="step-dot">${idx < stepIdx ? '<i class="fa fa-check"></i>' : (idx + 1)}</div>
+              <div class="step-label">${STEP_LABELS[s]}</div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="card p-3 p-lg-4 shadow-sm border-start border-4 border-warning">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+              <div>
+                <span class="fs-5 fw-bold text-dark me-2">Order #${order.id}</span>
+                <span class="text-muted small">— ${cust ? (cust.full_name || cust.username) : 'Customer'}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                ${UI.statusBadge(order.status)}
+                <a href="order-detail.html?id=${order.id}" class="btn btn-sm btn-outline-secondary">
+                  <i class="fa fa-eye"></i> Details
+                </a>
+                ${user.is_staff ? `
+                  <a href="delivery-update.html?id=${order.id}" class="btn btn-sm btn-primary">
+                    <i class="fa fa-edit"></i> Update Rider
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+
+            <div class="tracker-steps my-3">${stepsHtml}</div>
+
+            <div class="row g-2 bg-light p-3 rounded-3 mt-1">
+              <div class="col-sm-6 col-md-3">
+                <div class="text-muted small">Rider:</div>
+                <div class="fw-bold text-dark small"><i class="fa fa-motorcycle text-saffron me-1"></i>${del.rider_name || 'Rider Assigning'}</div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="text-muted small">Contact:</div>
+                <div class="fw-bold text-dark small"><i class="fa fa-phone text-saffron me-1"></i>${del.rider_phone || '—'}</div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="text-muted small">Current Location:</div>
+                <div class="fw-bold text-dark small"><i class="fa fa-map-pin text-saffron me-1"></i>${del.current_location || 'Kitchen'}</div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="text-muted small">Estimated Arrival (ETA):</div>
+                <div class="fw-bold text-success small"><i class="fa fa-clock text-success me-1"></i>${del.eta || '30 mins'}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Table
+    const tbody = document.getElementById('delivery-tbody');
+    tbody.innerHTML = allOrders.map(order => {
+      const cust = Data.getUser(order.customer_id);
+      const del  = Data.getDelivery(order.id) || {};
+
+      return `
+        <tr>
+          <td><a href="order-detail.html?id=${order.id}" class="fw-bold text-saffron text-decoration-none">#${order.id}</a></td>
+          <td>
+            <div class="fw-semibold text-dark">${cust ? (cust.full_name || cust.username) : 'Customer'}</div>
+            <small class="text-muted">${cust ? cust.phone : '—'}</small>
+          </td>
+          <td class="fw-bold">${del.rider_name || 'Not assigned'}</td>
+          <td>${del.rider_phone || '—'}</td>
+          <td><span class="text-muted small"><i class="fa fa-map-marker-alt text-saffron me-1"></i>${del.current_location || 'Kitchen'}</span></td>
+          <td><span class="badge bg-light text-dark border">${del.eta || '—'}</span></td>
+          <td>${UI.statusBadge(order.status)}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="order-detail.html?id=${order.id}" class="btn btn-sm btn-outline-secondary" title="View Order">
+                <i class="fa fa-eye"></i>
+              </a>
+              ${user.is_staff ? `
+                <a href="delivery-update.html?id=${order.id}" class="btn btn-sm btn-primary" title="Update Rider / ETA">
+                  <i class="fa fa-edit"></i>
+                </a>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    $('#delivery-table').DataTable({
+      pageLength: 10,
+      order: [[0, 'desc']],
+      language: {
+        search: "_INPUT_",
+        searchPlaceholder: "Search rider, location..."
+      }
+    });
+  });
+  </script>
+</body>
+</html>

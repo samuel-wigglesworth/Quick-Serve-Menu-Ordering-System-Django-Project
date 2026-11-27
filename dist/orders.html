@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orders | QuickServe — Indian Food Ordering</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- DataTables 1.13 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.7/css/dataTables.bootstrap5.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+          <div>
+            <h1 class="h2 mb-1">Order History &amp; Bookings</h1>
+            <p class="text-muted mb-0 small" id="orders-subtitle">Manage and track your food bookings in real time.</p>
+          </div>
+          <a href="order-create.html" class="btn btn-primary shadow-sm">
+            <i class="fa fa-cart-plus me-1"></i> Place New Order
+          </a>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="card p-3 shadow-sm mb-4">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex flex-wrap gap-2" id="status-filter-pills">
+              <button class="category-pill active" data-status="all">All Orders</button>
+              <button class="category-pill" data-status="pending">Pending</button>
+              <button class="category-pill" data-status="preparing">Preparing</button>
+              <button class="category-pill" data-status="ready">Ready</button>
+              <button class="category-pill" data-status="dispatched">Dispatched</button>
+              <button class="category-pill" data-status="delivered">Delivered</button>
+              <button class="category-pill" data-status="cancelled">Cancelled</button>
+            </div>
+            <span class="text-muted small" id="orders-count-badge"></span>
+          </div>
+        </div>
+
+        <!-- Orders DataTable Card -->
+        <div class="card p-3 p-lg-4 shadow-sm mb-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle w-100" id="orders-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Items &amp; Quantity</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Date &amp; Time</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+
+  <!-- Cancel Order Modal -->
+  <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Cancel Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to cancel <strong id="cancel-order-id-label"></strong>? This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Keep Order</button>
+          <button type="button" class="btn btn-danger btn-sm" id="btn-confirm-cancel">Yes, Cancel Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <footer class="qs-footer mt-auto">
+    <div class="container-xl text-center">
+      <span class="fw-bold"><i class="fa fa-utensils text-warning me-2"></i>QuickServe</span>
+      <span class="ms-2 text-muted">— Online Food Ordering &amp; Kitchen Management</span>
+      <div class="mt-1 small text-muted opacity-75">&copy; 2026 QuickServe. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.7/js/dataTables.bootstrap5.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Auth.require();
+    if (!user) return;
+    renderNavigation('orders', user);
+
+    let dataTableInstance = null;
+    let selectedOrderIdToCancel = null;
+    let currentFilterStatus = 'all';
+
+    document.getElementById('orders-subtitle').textContent = user.is_staff ?
+      'Manage, filter, and track all customer orders across your restaurant.' :
+      'Track your past and active orders from QuickServe.';
+
+    function loadOrders() {
+      const allOrders = user.is_staff ? Data.getOrders() : Data.getOrdersForUser(user.id);
+      let list = allOrders;
+      if (currentFilterStatus !== 'all') {
+        list = list.filter(o => o.status === currentFilterStatus);
+      }
+
+      // Sort newest first
+      list = [...list].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+      document.getElementById('orders-count-badge').textContent = `${list.length} order${list.length !== 1 ? 's' : ''}`;
+
+      if (dataTableInstance) {
+        dataTableInstance.destroy();
+      }
+
+      const tbody = document.getElementById('orders-tbody');
+      tbody.innerHTML = list.map(o => {
+        const cust = Data.getUser(o.customer_id);
+        const itemsDetail = (o.items || []).map(li => {
+          const item = Data.getMenuItem(li.menu_item_id);
+          return item ? `• ${item.name} (${li.quantity}x)` : '';
+        }).filter(Boolean).join('<br>');
+
+        const totalItemsCount = (o.items || []).reduce((sum, li) => sum + li.quantity, 0);
+
+        return `
+          <tr>
+            <td>
+              <a href="order-detail.html?id=${o.id}" class="fw-bold text-saffron text-decoration-none">#${o.id}</a>
+            </td>
+            <td>
+              <div class="fw-semibold text-dark">${cust ? (cust.full_name || cust.username) : 'Customer'}</div>
+              <small class="text-muted"><i class="fa fa-phone me-1"></i>${cust ? cust.phone : '—'}</small>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border mb-1">${totalItemsCount} item${totalItemsCount !== 1 ? 's' : ''}</span>
+              <div class="small text-muted" style="line-height:1.3;">${itemsDetail}</div>
+            </td>
+            <td>
+              <span class="fw-bold text-dark fs-6">${UI.formatCurrency(Data.getOrderTotal(o))}</span>
+            </td>
+            <td>${UI.statusBadge(o.status)}</td>
+            <td class="small text-muted">${UI.formatDate(o.created_at)}</td>
+            <td>
+              <div class="d-flex align-items-center gap-1">
+                <a href="order-detail.html?id=${o.id}" class="btn btn-sm btn-outline-primary" title="View Order">
+                  <i class="fa fa-eye"></i> View
+                </a>
+                ${['pending'].includes(o.status) ? `
+                  <button class="btn btn-sm btn-outline-danger btn-cancel-order" data-id="${o.id}" title="Cancel Order">
+                    <i class="fa fa-times"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      dataTableInstance = $('#orders-table').DataTable({
+        pageLength: 10,
+        lengthMenu: [10, 25, 50],
+        order: [[0, 'desc']],
+        language: {
+          search: "_INPUT_",
+          searchPlaceholder: "Search by ID, customer..."
+        }
+      });
+
+      // Wire cancel buttons
+      document.querySelectorAll('.btn-cancel-order').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedOrderIdToCancel = Number(btn.dataset.id);
+          document.getElementById('cancel-order-id-label').textContent = `Order #${selectedOrderIdToCancel}`;
+          const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+          modal.show();
+        });
+      });
+    }
+
+    // Filter pills
+    document.querySelectorAll('#status-filter-pills .category-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#status-filter-pills .category-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilterStatus = btn.dataset.status;
+        loadOrders();
+      });
+    });
+
+    // Confirm cancel order
+    document.getElementById('btn-confirm-cancel').addEventListener('click', () => {
+      if (selectedOrderIdToCancel) {
+        Data.updateOrderStatus(selectedOrderIdToCancel, 'cancelled');
+        bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal')).hide();
+        UI.showAlert(`Order #${selectedOrderIdToCancel} has been cancelled.`, 'info');
+        loadOrders();
+      }
+    });
+
+    loadOrders();
+  });
+  </script>
+</body>
+</html>

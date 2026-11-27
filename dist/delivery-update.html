@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Delivery | QuickServe Staff</title>
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div id="navbar-container"></div>
+
+  <main class="container-xl py-4">
+        <div id="alert-area"></div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+          <div>
+            <h1 class="h2 mb-1" id="page-title">Update Delivery Details</h1>
+            <p class="text-muted mb-0 small">Assign rider, phone number, real-time GPS location, and arrival estimate.</p>
+          </div>
+          <a href="delivery.html" class="btn btn-outline-secondary">
+            <i class="fa fa-arrow-left me-1"></i> Back to Tracking
+          </a>
+        </div>
+
+        <div class="row">
+          <div class="col-md-8 col-lg-6">
+            <div class="card p-4 shadow-sm">
+              <form id="delivery-form" novalidate>
+                <div class="mb-3">
+                  <label for="rider-name" class="form-label small fw-bold">Rider Name</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa fa-motorcycle text-saffron"></i></span>
+                    <input type="text" class="form-control" id="rider-name" placeholder="e.g. Rajan Kumar">
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="rider-phone" class="form-label small fw-bold">Rider Contact Number</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa fa-phone text-saffron"></i></span>
+                    <input type="tel" class="form-control" id="rider-phone" placeholder="e.g. +91 98111 22334">
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="current-location" class="form-label small fw-bold">Current Live Location</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa fa-map-marker-alt text-saffron"></i></span>
+                    <input type="text" class="form-control" id="current-location" placeholder="e.g. Connaught Place Circle / In Transit">
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <label for="eta" class="form-label small fw-bold">Estimated Arrival (ETA)</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa fa-clock text-saffron"></i></span>
+                    <input type="text" class="form-control" id="eta" placeholder="e.g. 15 minutes, Out for Delivery, Arrived">
+                  </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-save me-1"></i> Save Delivery Details
+                  </button>
+                  <a id="view-order-link" href="#" class="btn btn-outline-secondary">
+                    View Order Details
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Auth.require(true);
+    if (!user) return;
+    renderNavigation('delivery', user);
+
+    const orderId = Number(new URLSearchParams(location.search).get('id'));
+    const order = Data.getOrder(orderId);
+    if (!order) {
+      document.getElementById('alert-area').innerHTML = '<div class="alert alert-danger">Order not found.</div>';
+      return;
+    }
+
+    document.getElementById('page-title').textContent = `Update Delivery for Order #${order.id}`;
+    document.getElementById('view-order-link').href = `order-detail.html?id=${order.id}`;
+
+    const existing = Data.getDelivery(order.id) || {};
+    document.getElementById('rider-name').value       = existing.rider_name || '';
+    document.getElementById('rider-phone').value      = existing.rider_phone || '';
+    document.getElementById('current-location').value = existing.current_location || '';
+    document.getElementById('eta').value              = existing.eta || '';
+
+    document.getElementById('delivery-form').addEventListener('submit', e => {
+      e.preventDefault();
+      Data.saveDelivery(order.id, {
+        rider_name:       document.getElementById('rider-name').value.trim(),
+        rider_phone:      document.getElementById('rider-phone').value.trim(),
+        current_location: document.getElementById('current-location').value.trim(),
+        eta:              document.getElementById('eta').value.trim(),
+      });
+      UI.showAlert('Delivery details updated successfully! Redirecting...', 'success');
+      setTimeout(() => window.location.href = `delivery.html`, 1000);
+    });
+  });
+  </script>
+</body>
+</html>
